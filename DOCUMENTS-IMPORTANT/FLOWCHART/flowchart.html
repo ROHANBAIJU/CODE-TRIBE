@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AstroGuard Methodology Flowchart</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f4f9;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 40px;
+        }
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+        }
+        .chart-container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 1200px;
+            display: flex;
+            justify-content: center;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>AstroGuard: Methodology & Architecture</h1>
+    
+    <div class="chart-container">
+        <pre class="mermaid">
+            graph LR
+                %% Define Styles
+                classDef input fill:#eceff1,stroke:#455a64,stroke-width:2px,color:#000;
+                classDef engine fill:#e3f2fd,stroke:#1565c0,stroke-width:2px,color:#000;
+                classDef decision fill:#fff9c4,stroke:#fbc02d,stroke-width:2px,stroke-dasharray: 5 5,color:#000;
+                classDef cloud fill:#ffebee,stroke:#c62828,stroke-width:2px,color:#000;
+                classDef ui fill:#e8f5e9,stroke:#2e7d32,stroke-width:2px,color:#000;
+
+                %% --- ZONE 1: INPUT ---
+                subgraph INPUT ["📡 Input Phase"]
+                    direction TB
+                    Cam[("📹 Video Feed")]
+                    ISP["⚙️ Dynamic ISP<br/>(Glare/Contrast Fix)"]
+                end
+
+                %% --- ZONE 2: CORE ENGINE ---
+                subgraph CORE ["🧠 3-Layer Inference Engine"]
+                    direction TB
+                    Split((Split))
+                    L1["Layer 1: YOLO-Nano<br/>(Global Context)"]
+                    L2["Layer 2: YOLO-Small<br/>(Occlusion Expert)"]
+                    WBF{"💎 WBF Fusion"}
+                end
+
+                %% --- ZONE 3: DECISION & CLOUD ---
+                subgraph ASTROOPS ["☁️ AstroOps Feedback Loop"]
+                    direction TB
+                    FailDB[("📂 Failure Logs")]
+                    Falcon["🦅 Falcon Digital Twin<br/>(Synthetic Gen)"]
+                    Retrain["⚙️ Auto-Retrain"]
+                end
+
+                %% --- ZONE 4: UI ---
+                subgraph DASHBOARD ["💻 Mission Control"]
+                    UI_Box["📊 User Dashboard<br/>Real-time + 2D Map"]
+                end
+
+                %% --- CONNECTIONS ---
+                
+                %% Input Flow
+                Cam --> ISP ::: input
+                ISP ==> Split ::: engine
+
+                %% Engine Flow
+                Split --> L1 ::: engine
+                Split --> L2 ::: engine
+                L1 --> WBF ::: engine
+                L2 --> WBF
+
+                %% Decision Logic
+                WBF -- "High Conf (>0.5)" --> UI_Box ::: ui
+                WBF -. "Low Conf (<0.45)" .-> FailDB ::: cloud
+
+                %% Cloud Loop
+                FailDB --> Falcon ::: cloud
+                Falcon --> Retrain ::: cloud
+                Retrain -.-> |"Hot-Swap Update"| CORE
+        </pre>
+    </div>
+
+    <script type="module">
+        import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+        mermaid.initialize({ 
+            startOnLoad: true,
+            theme: 'base',
+            themeVariables: {
+                fontFamily: 'Segoe UI',
+                fontSize: '16px'
+            },
+            flowchart: {
+                curve: 'basis', /* Makes lines smooth */
+                padding: 20
+            }
+        });
+    </script>
+
+</body>
+</html>
