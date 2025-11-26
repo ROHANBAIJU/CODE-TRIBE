@@ -1,0 +1,8 @@
+# Test with webcam
+python backend/test_fusion.py --source 0
+
+# Test with image
+python backend/test_fusion.py --source "path/to/image.jpg"
+
+# Test with video
+python backend/test_fusion.py --source "path/to/video.mp4"
