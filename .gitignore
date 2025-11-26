@@ -13,3 +13,5 @@ astroguard.db
 *.egg-info/
 dist/
 build/
+
+datasets
