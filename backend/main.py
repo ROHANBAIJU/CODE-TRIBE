@@ -38,16 +38,29 @@ logs_collection = db[COLLECTION_NAME]
 print(f"📂 MongoDB initialized: {DB_NAME}")
 
 # --- MODEL LOADER ---
-MODEL_PATH_SPEED = "models/yolo_speed.pt"
-MODEL_PATH_ACCURACY = "models/yolo_accuracy.pt"
+# Get absolute path to models directory
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+MODELS_DIR = os.path.join(BASE_DIR, "models")
 
-speed_model_source = MODEL_PATH_SPEED if os.path.exists(MODEL_PATH_SPEED) else "yolov8n.pt"
-accuracy_model_source = MODEL_PATH_ACCURACY if os.path.exists(MODEL_PATH_ACCURACY) else "yolov8s.pt"
+MODEL_PATH_SPEED = os.path.join(MODELS_DIR, "yolo_speed.pt")
+MODEL_PATH_ACCURACY = os.path.join(MODELS_DIR, "yolo_accuracy.pt")
 
-print(f"⚡ Loading Speed Model: {speed_model_source}")
+# Check if trained models exist, otherwise fall back to pretrained
+if os.path.exists(MODEL_PATH_SPEED):
+    speed_model_source = MODEL_PATH_SPEED
+    print(f"⚡ Loading Trained Speed Model: {speed_model_source}")
+else:
+    speed_model_source = "yolov8n.pt"
+    print(f"⚠️  Trained speed model not found, using pretrained: {speed_model_source}")
+
+if os.path.exists(MODEL_PATH_ACCURACY):
+    accuracy_model_source = MODEL_PATH_ACCURACY
+    print(f"🎯 Loading Trained Accuracy Model: {accuracy_model_source}")
+else:
+    accuracy_model_source = "yolov8s.pt"
+    print(f"⚠️  Trained accuracy model not found, using pretrained: {accuracy_model_source}")
+
 model_speed = YOLO(speed_model_source)
-
-print(f"🎯 Loading Accuracy Model: {accuracy_model_source}")
 model_accuracy = YOLO(accuracy_model_source)
 
 # --- DATA MODELS ---
