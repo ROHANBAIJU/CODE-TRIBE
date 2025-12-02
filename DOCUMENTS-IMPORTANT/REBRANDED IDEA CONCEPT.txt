@@ -1,0 +1,65 @@
+Project Name
+AstroGuard: The Self-Healing Vision Infrastructure Agent
+
+
+The Problem: The "Static AI" Bottleneck (The Gap)
+In high-stakes industrial environments—such as space stations, offshore rigs, and manufacturing plants—safety is non-negotiable. However, current Computer Vision (CV) infrastructure suffers from a critical flaw: Data Drift.
+
+The Reality: Standard AI models are "static." They are trained once and deployed.
+
+The Failure: When environmental conditions change (e.g., a lightbulb breaks, smoke obscures a lens, or layout shifts), the model’s accuracy plummets.
+
+The Cost: Fixing this currently requires a "Human-in-the-Loop" to manually collect new data, label it, and retrain the model. This process takes weeks, creating dangerous safety gaps and high operational costs.
+
+Current Industry Status: Deploy → Fail → Wait for Humans → Fix.
+
+
+The Solution: AstroGuard (The Bridge)
+AstroGuard bridges this gap by replacing static models with an Autonomous Vision Infrastructure Agent. It is an "Immortal" system that detects its own failures and repairs itself in real-time.
+
+New AstroGuard Status: Deploy → Fail → Agent Auto-Corrects → Fix.
+
+Key Features & Agentic Workflow:
+
+1. Multi-Modal Perception (The Eyes) We utilize a 3-Layer Hybrid Ensemble (YOLO-Nano + YOLO-Small + Weighted Box Fusion) to achieve sub-50ms latency. This ensures immediate detection of critical safety assets (Oxygen Tanks, Fire Extinguishers) even under partial occlusion.
+
+
+2. Vision-Language Reasoning (The Brain) Moving beyond simple bounding boxes, AstroGuard integrates Vision-Language Models (VLMs) (e.g., LlaVA/Moondream). This allows the agent to:
+
+- Understand context (e.g., "The Fire Extinguisher is present but blocked by floating debris").
+
+- Enable a Natural Language Chat Interface, allowing operators to query the video feed directly (e.g., "Agent, is the sector safe?").
+
+
+3. The "AstroOps" Infrastructure Loop (The Self-Healing Core) This is our primary innovation in AI Automation:
+
+- Failure Detection: The Agent monitors its own uncertainty levels in real-time.
+
+- Autonomous Simulation: When confidence drops (e.g., due to harsh lighting), the Agent triggers a Digital Twin Simulator to procedurally generate 1,000+ synthetic images of that specific failure scenario.
+
+- Auto-Retraining: The system triggers a CI/CD pipeline to fine-tune the model on this new data and hot-swap the weights at the edge—completely removing the human from the maintenance loop.
+
+Tech Stack:
+
+- Agentic Framework: Custom Python Agents (Orchestration of Vision & Ops)
+
+- Vision & Reasoning: Ultralytics YOLOv11 (Detection), LlaVA / Moondream VLM (Reasoning via Groq API)
+
+- Infrastructure & Ops: Docker (Containerization), GitHub Actions (CI/CD Pipeline), FastAPI (Async Agent Backend)
+
+- Simulation: Duality Falcon /Unity (Synthetic Data Generation for Feedback Loop)
+
+- Frontend: Next.js + Tailwind CSS (Mission Control Dashboard & Agent Chat Interface)
+
+
+What We Expect to Achieve:
+During the hackathon, our goal is to ship a fully functional "Closed-Loop" Prototype. Specifically, we aim to:
+
+- Demonstrate Autonomy: Showcase the "AstroOps" pipeline where a vision failure automatically triggers a (mocked) retraining workflow.
+
+- Bridge Vision & Language: Successfully integrate a VLM to allow users to "Chat" with the live video feed (e.g., "Is the sector safe?").
+
+- Prove Infrastructure Viability: Deploy the agent in a Dockerized container to prove it can run on edge infrastructure while maintaining a connection to the Cloud learning loop.
+
+Conclusion
+Current AI models are static artifacts that degrade over time. AstroGuard represents the shift to Dynamic AI Infrastructure—models that are "born" with the ability to maintain themselves. By combining high-speed detection with VLM reasoning and an autonomous synthetic data feedback loop, we are building the first generation of industrial vision agents that get smarter the longer they operate. We are building Immortal Infrastructure.
