@@ -1,17 +1,184 @@
-# Created by venv; see https://docs.python.org/3/library/venv.html
-venv/
+# ============================================
+# AstroGuard - Git Ignore Configuration
+# ============================================
+
+# Python
+# ============================================
 __pycache__/
-*.pyc
-
-astroguard.db
-.DS_Store
-*.pyo
-*.pyd
-.Python
+*.py[cod]
+*$py.class
 *.so
-*.egg
-*.egg-info/
-dist/
+.Python
 build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
 
-datasets
+# Virtual Environments
+# ============================================
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+.venv/
+
+# Model Files (Large Files)
+# ============================================
+*.pt
+*.pth
+*.onnx
+*.tflite
+*.h5
+*.pb
+*.weights
+*.caffemodel
+models/*.pt
+models/*.pth
+backend/models/*.pt
+backend/models/*.pth
+
+# YOLO-specific
+# ============================================
+runs/
+yolov8*.pt
+yolov5*.pt
+yolo*.pt
+
+# Dataset Files (Large)
+# ============================================
+datasets/
+data/raw/
+data/processed/
+*.zip
+*.tar
+*.tar.gz
+*.rar
+
+# Training Outputs
+# ============================================
+runs/
+logs/
+checkpoints/
+training_output/
+wandb/
+mlruns/
+
+# Video/Image Test Files
+# ============================================
+*.mp4
+*.avi
+*.mov
+*.mkv
+*.wmv
+*.flv
+test_video*.mp4
+test_video*.avi
+screenshot_*.jpg
+screenshot_*.png
+
+# IDE/Editor
+# ============================================
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# Jupyter Notebooks
+# ============================================
+.ipynb_checkpoints/
+*.ipynb
+
+# Testing
+# ============================================
+.pytest_cache/
+.coverage
+htmlcov/
+*.cover
+.hypothesis/
+
+# Environment Variables
+# ============================================
+.env
+.env.local
+.env.*.local
+
+# Logs
+# ============================================
+*.log
+logs/
+*.log.*
+
+# Temporary Files
+# ============================================
+*.tmp
+*.temp
+tmp/
+temp/
+
+# macOS
+# ============================================
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# Windows
+# ============================================
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# Node.js (if you add frontend)
+# ============================================
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+package-lock.json
+yarn.lock
+
+# Documentation Build
+# ============================================
+docs/_build/
+site/
+
+# ============================================
+# IMPORTANT: Keep These Files
+# ============================================
+# The following files SHOULD be tracked:
+# ✅ requirements.txt
+# ✅ README.md
+# ✅ backend/core/*.py
+# ✅ backend/test_fusion.py
+# ✅ backend/models/.gitkeep (empty placeholder)
+# ✅ Sample images (small reference images)
+# ✅ .gitignore (this file)
+
+# Model Placeholder (keep directory but not models)
+# ============================================
+!backend/models/.gitkeep
+
+# Sample Training Images (if small)
+# ============================================
+# Uncomment if you want to keep small sample images:
+# !backend/training_images/*.jpg
+# !backend/training_images/*.png
