@@ -182,3 +182,9 @@ site/
 # Uncomment if you want to keep small sample images:
 # !backend/training_images/*.jpg
 # !backend/training_images/*.png
+# Training Data (NEVER COMMIT)
+# ============================================
+training/rnn_dataset/
+training/train/
+training/*.zip
+training/*.tar.gz
