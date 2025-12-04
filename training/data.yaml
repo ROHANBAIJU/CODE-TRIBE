@@ -1,0 +1,12 @@
+# AstroGuard Dataset Configuration
+# Paths relative to this file or absolute paths
+
+train: Z:/CODE-TRIBE/datasets/TRAINING DATSET/train
+val: Z:/CODE-TRIBE/datasets/TRAINING DATSET/val
+test: Z:/CODE-TRIBE/datasets/TESTING DATASET
+
+# Number of classes
+nc: 7
+
+# Class names
+names: ['OxygenTank', 'NitrogenTank', 'FirstAidBox', 'FireAlarm', 'SafetySwitchPanel', 'EmergencyPhone', 'FireExtinguisher']
