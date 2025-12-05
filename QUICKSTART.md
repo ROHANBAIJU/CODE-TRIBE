@@ -1,87 +1,141 @@
-# 🚀 AstroGuard - Quick Start Guide
+# 🚀 SafetyGuard AI - Quick Start Guide
 
-## Start Backend
+> Get up and running in under 5 minutes!
 
-```powershell
-# Terminal 1 - Backend
-cd d:\CODE-TRIBE\backend
-uvicorn main:app --reload --port 8000
+---
+
+## Prerequisites
+
+- **Python 3.10+**
+- **Node.js 18+**
+- **MongoDB** (optional - will use mock if unavailable)
+- **NVIDIA GPU** (optional - for faster inference)
+
+---
+
+## ⚡ Fastest Setup (2 Commands)
+
+### Backend
+```bash
+cd backend
+pip install -r ../requirements.txt
+python -m uvicorn main:app --reload
 ```
 
-Backend will run at: **http://localhost:8000**
-
----
-
-## Start Frontend
-
-```powershell
-# Terminal 2 - Frontend
-cd d:\CODE-TRIBE\frontend
-npm run dev
+### Frontend
+```bash
+cd frontend
+npm install && npm run dev
 ```
 
-Frontend will run at: **http://localhost:5173**
+**Access:** 
+- Frontend: http://localhost:5173
+- Backend API: http://localhost:8000
+- API Docs: http://localhost:8000/docs
 
 ---
 
-## Access the App
+## 🐳 Docker Setup (Recommended for Demo)
 
-1. Open browser: **http://localhost:5173**
-2. Click **"Upload Image"** button
-3. Select a test image with safety equipment
-4. View real-time detection results!
+```bash
+# Copy environment template
+cp .env.example .env
+
+# Start everything
+docker-compose up -d
+
+# Check status
+docker-compose ps
+```
+
+**Access:** http://localhost
 
 ---
 
-## Navigation
+## 🔑 API Keys (Optional but Recommended)
 
-- **Dashboard** - Main detection view with metrics
-- **Fusion** - See 3-layer architecture in action  
-- **Falcon** - Track synthetic data generation
-- **Station Map** - Equipment location visualization
+### Groq API (for VLM Chat "The Brain")
+1. Go to https://console.groq.com
+2. Create an account and get API key
+3. Add to `.env`: `GROQ_API_KEY=your_key_here`
+
+Without Groq, the system uses a mock VLM with smart responses.
 
 ---
 
-## Test the Backend Directly
+## 🧪 Test the API
 
-```powershell
+```bash
 # Health check
 curl http://localhost:8000/system/health
 
-# Upload image for detection (use Postman or similar)
-POST http://localhost:8000/detect/fusion
-Body: form-data, key="file", value=<select image>
+# SingularityNET status
+curl http://localhost:8000/snet/status
+
+# VLM chat status
+curl http://localhost:8000/chat/status
 ```
 
 ---
 
-## Stop Servers
+## 📱 Using the Dashboard
 
-Press `Ctrl+C` in each terminal window.
+1. **Upload Image** - Click "Upload Image" button
+2. **View Detections** - See safety equipment detected with bounding boxes
+3. **AI Chat** - Toggle "AI Chat" to ask questions about safety
+4. **AstroOps** - Toggle "AstroOps" to see self-healing pipeline
+5. **SNet** - Toggle "SNet" to see SingularityNET integration
+
+### Example Chat Queries:
+- "Is this area safe for workers?"
+- "What safety equipment is visible?"
+- "Are there any hazards I should know about?"
+- "Rate the overall safety of this zone"
 
 ---
 
-## Troubleshooting
+## 🎮 Demo Script
 
-**Port already in use:**
-```powershell
-# Change backend port
-uvicorn main:app --reload --port 8001
+For hackathon demo, follow this sequence:
 
-# Update frontend .env
-VITE_API_URL=http://localhost:8001
+1. **Show Dashboard** - Overview of the platform
+2. **Upload Test Image** - From `datasets/TESTING DATASET/images/`
+3. **Point out Detections** - Show bounding boxes and confidence scores
+4. **Open AI Chat** - Ask "Is this sector safe?"
+5. **Trigger AstroOps** - Click "Simulate Failure" to show self-healing
+6. **Show SNet Panel** - Connect wallet, show marketplace services
+
+---
+
+## ⚠️ Troubleshooting
+
+### Backend won't start
+```bash
+# Make sure you're in the right directory
+cd backend
+
+# Check if models exist
+ls models/
+
+# If no models, the system will use pretrained YOLO (still works!)
 ```
 
-**Dependencies missing:**
-```powershell
-# Backend
-pip install -r requirements.txt
-
-# Frontend
+### Frontend errors
+```bash
+# Clear cache and reinstall
 cd frontend
+rm -rf node_modules package-lock.json
 npm install
+npm run dev
 ```
+
+### MongoDB connection fails
+The system will log a warning but continue working. Detection features work without MongoDB.
 
 ---
 
-**✨ You're ready to go! Upload an image and see AstroGuard in action.**
+## 📞 Support
+
+For hackathon support, contact the CODE-TRIBE team.
+
+**Good luck with the demo! 🏆**

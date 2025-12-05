@@ -1,4 +1,4 @@
-from fastapi import FastAPI, File, UploadFile, HTTPException
+from fastapi import FastAPI, File, UploadFile, HTTPException, Form
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 from ultralytics import YOLO
@@ -7,17 +7,26 @@ import io
 import numpy as np
 import time
 import os
-import motor.motor_asyncio
 from datetime import datetime
 from core.fusion_enhanced import FusionEnhanced  # Updated import
 from core.rnn_temporal import RNNTemporal  # New import
+from core.vlm_chat import get_vlm_chat, VLMProvider  # VLM Chat - The Brain
+from core.singularitynet import get_snet, init_snet  # SingularityNET integration
 from typing import List, Optional
 
-app = FastAPI(title="AstroGuard API", version="2.0.0")  # Version bump
+# Try to import motor for MongoDB (optional)
+try:
+    import motor.motor_asyncio
+    MONGO_AVAILABLE = True
+except ImportError:
+    MONGO_AVAILABLE = False
+    print("⚠️  Motor not available - MongoDB features disabled")
+
+app = FastAPI(title="SafetyGuard AI", version="3.0.0")  # Rebranded!
 
 # --- CONFIGURATION ---
 MONGO_URI = "mongodb://localhost:27017" 
-DB_NAME = "astroguard_db"
+DB_NAME = "safetyguard_db"
 COLLECTION_NAME = "falcon_logs"
 
 app.add_middleware(
@@ -28,12 +37,20 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# --- DATABASE SETUP ---
-client = motor.motor_asyncio.AsyncIOMotorClient(MONGO_URI)
-db = client[DB_NAME]
-logs_collection = db[COLLECTION_NAME]
-
-print(f"📂 MongoDB initialized: {DB_NAME}")
+# --- DATABASE SETUP (Optional) ---
+if MONGO_AVAILABLE:
+    try:
+        client = motor.motor_asyncio.AsyncIOMotorClient(MONGO_URI, serverSelectionTimeoutMS=3000)
+        db = client[DB_NAME]
+        logs_collection = db[COLLECTION_NAME]
+        print(f"📂 MongoDB initialized: {DB_NAME}")
+    except Exception as e:
+        MONGO_AVAILABLE = False
+        print(f"⚠️  MongoDB connection failed: {e}")
+        logs_collection = None
+else:
+    logs_collection = None
+    print("📂 Running without MongoDB (logs will not be persisted)")
 
 # --- MODEL LOADER ---
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -87,6 +104,18 @@ class MapRequest(BaseModel):
     y: float
     label: str
 
+class ChatRequest(BaseModel):
+    query: str
+    include_detections: bool = True
+
+class ChatResponse(BaseModel):
+    is_safe: bool
+    confidence: float
+    summary: str
+    alerts: List[str]
+    recommendations: List[str]
+    equipment_count: int
+
 class DetectionResponse(BaseModel):
     box: List[float]
     score: float
@@ -118,20 +147,23 @@ def yolo_results_to_detections(results, model_names):
 
 @app.get("/system/health")
 async def health_check():
-    try:
-        await client.admin.command('ping')
-        db_status = "connected"
-    except Exception:
-        db_status = "disconnected"
+    db_status = "disabled"
+    if MONGO_AVAILABLE and logs_collection is not None:
+        try:
+            await client.admin.command('ping')
+            db_status = "connected"
+        except Exception:
+            db_status = "disconnected"
     
     rnn_status = "active" if rnn_model else "disabled"
         
     return {
         "status": "nominal", 
-        "modules": ["Inference", "Falcon-Link", "MongoDB", "RNN-Temporal", "Fusion-Enhanced"], 
+        "modules": ["Inference", "Falcon-Link", "RNN-Temporal", "Fusion-Enhanced", "VLM-Chat", "SingularityNET"], 
         "db_connection": db_status, 
         "rnn_temporal": rnn_status,
-        "gpu": "active"
+        "gpu": "active",
+        "version": "3.0.0"
     }
 
 @app.post("/detect/fusion")
@@ -257,7 +289,7 @@ async def run_single_layer(layer_num: int, file: UploadFile = File(...)):
         "detections": detections
     }
 
-# ✅ UPDATED: Saves to MongoDB
+# ✅ UPDATED: Saves to MongoDB (optional)
 @app.post("/astroops/log")
 async def log_event(log: LogRequest):
     print(f"⚠️ [FALCON TRIGGER] Saving to MongoDB: {log.object_class} ({log.confidence})")
@@ -266,22 +298,28 @@ async def log_event(log: LogRequest):
     log_dict["status"] = "PENDING_RETRAIN"
     log_dict["created_at"] = datetime.utcnow()
     
-    new_log = await logs_collection.insert_one(log_dict)
-    
-    return {"status": "saved", "id": str(new_log.inserted_id), "action": "synthetic_data_generation_queued"}
+    if logs_collection is not None:
+        new_log = await logs_collection.insert_one(log_dict)
+        return {"status": "saved", "id": str(new_log.inserted_id), "action": "synthetic_data_generation_queued"}
+    else:
+        # MongoDB not available, return simulated response
+        import uuid
+        return {"status": "saved_locally", "id": str(uuid.uuid4()), "action": "synthetic_data_generation_queued", "note": "MongoDB disabled"}
 
 # ✅ NEW ENDPOINT: Fetch History (From MongoDB)
 @app.get("/astroops/history")
 async def get_logs():
     logs = []
-    cursor = logs_collection.find().sort("created_at", -1).limit(20)
     
-    async for document in cursor:
-        document["_id"] = str(document["_id"])
-        if "created_at" in document:
-             document["created_at"] = document["created_at"].isoformat()
-        logs.append(document)
+    if logs_collection is not None:
+        cursor = logs_collection.find().sort("created_at", -1).limit(20)
         
+        async for document in cursor:
+            document["_id"] = str(document["_id"])
+            if "created_at" in document:
+                 document["created_at"] = document["created_at"].isoformat()
+            logs.append(document)
+    
     return {"history": logs}
 
 @app.post("/mapping/2d")
@@ -291,6 +329,187 @@ async def get_map_coordinates(data: MapRequest):
         "map_y": (1 - data.y) * 100,
         "zone": "Habitation Module"
     }
+
+# ============================================
+# VLM CHAT ENDPOINTS - THE BRAIN 🧠
+# ============================================
+
+# Store last detection for chat context
+_last_detections = []
+_last_image_bytes = None
+
+@app.post("/chat/safety")
+async def chat_safety_query(
+    file: UploadFile = File(...),
+    query: str = Form(default="Is this area safe?")
+):
+    """
+    Natural language safety query with image analysis
+    The Brain of SafetyGuard - combines vision detection with language understanding
+    """
+    global _last_detections, _last_image_bytes
+    
+    start_time = time.time()
+    
+    # Read image
+    image_bytes = await file.read()
+    _last_image_bytes = image_bytes
+    image = Image.open(io.BytesIO(image_bytes))
+    img_np = np.array(image)
+    
+    # Run detection first
+    results_accuracy = model_accuracy(img_np, conf=0.25)
+    yolo_detections = yolo_results_to_detections(results_accuracy, model_accuracy.names)
+    
+    # Apply RNN temporal
+    if rnn_model:
+        rnn_detections = rnn_model.process_detections(yolo_detections)
+        fused_detections = fusion_model.fuse_detections(yolo_detections, rnn_detections)
+    else:
+        fused_detections = yolo_detections
+    
+    _last_detections = fused_detections
+    
+    # Query VLM
+    vlm = get_vlm_chat()
+    analysis = await vlm.analyze_safety(image_bytes, query, fused_detections)
+    
+    total_time = time.time() - start_time
+    
+    return {
+        "query": query,
+        "response": analysis.summary,
+        "is_safe": analysis.is_safe,
+        "confidence": analysis.confidence,
+        "alerts": analysis.alerts,
+        "recommendations": analysis.recommendations,
+        "equipment_detected": len(analysis.detected_equipment),
+        "detections": fused_detections,
+        "processing_time_ms": round(total_time * 1000, 2)
+    }
+
+@app.post("/chat/quick")
+async def chat_quick_query(query: str = Form(...)):
+    """
+    Quick chat query using last detection results (no new image)
+    Useful for follow-up questions
+    """
+    global _last_detections
+    
+    if not _last_detections:
+        return {
+            "query": query,
+            "response": "⚠️ No previous detection data available. Please upload an image first using /chat/safety",
+            "is_safe": None
+        }
+    
+    vlm = get_vlm_chat()
+    quick_response = await vlm.quick_check(_last_detections)
+    
+    return {
+        "query": query,
+        "response": quick_response,
+        "detections_used": len(_last_detections),
+        "equipment": [d.get('label', d.get('class', 'Unknown')) for d in _last_detections]
+    }
+
+@app.get("/chat/status")
+async def chat_status():
+    """Get VLM chat system status"""
+    vlm = get_vlm_chat()
+    return {
+        "provider": vlm.provider.value,
+        "groq_configured": bool(vlm.groq_api_key),
+        "status": "active",
+        "last_detections_count": len(_last_detections) if _last_detections else 0
+    }
+
+# ============================================
+# SINGULARITYNET INTEGRATION ENDPOINTS
+# ============================================
+
+@app.get("/snet/status")
+async def snet_status():
+    """Get SingularityNET connection status"""
+    snet = get_snet()
+    status = await snet.get_status()
+    return {
+        "snet_integration": "active",
+        **status
+    }
+
+@app.post("/snet/connect")
+async def snet_connect(wallet_address: Optional[str] = None):
+    """Connect to SingularityNET network"""
+    result = await init_snet(wallet_address)
+    return result
+
+@app.post("/snet/disconnect")
+async def snet_disconnect():
+    """Disconnect from SingularityNET"""
+    snet = get_snet()
+    return await snet.disconnect()
+
+@app.get("/snet/services")
+async def snet_list_services():
+    """List available services on the marketplace"""
+    snet = get_snet()
+    services = await snet.list_services()
+    return {
+        "services": [s.model_dump() for s in services],
+        "count": len(services)
+    }
+
+@app.get("/snet/published")
+async def snet_published_services():
+    """Get our published services"""
+    snet = get_snet()
+    services = await snet.get_published_services()
+    return {
+        "published_services": [s.model_dump() for s in services],
+        "count": len(services)
+    }
+
+class PublishServiceRequest(BaseModel):
+    service_name: str
+    service_type: str
+    description: str
+    price_per_call: float = 0.001
+
+@app.post("/snet/publish")
+async def snet_publish_service(request: PublishServiceRequest):
+    """Publish a new AI service to SingularityNET marketplace"""
+    snet = get_snet()
+    if not snet.is_connected:
+        await snet.connect()
+    
+    result = await snet.publish_service(
+        service_name=request.service_name,
+        service_type=request.service_type,
+        description=request.description,
+        price_per_call=request.price_per_call
+    )
+    return result
+
+class CallServiceRequest(BaseModel):
+    service_id: str
+    input_data: dict = {}
+
+@app.post("/snet/call")
+async def snet_call_service(request: CallServiceRequest):
+    """Call an AI service on the marketplace"""
+    snet = get_snet()
+    if not snet.is_connected:
+        await snet.connect()
+    
+    result = await snet.call_service(request.service_id, request.input_data)
+    return result
+
+@app.get("/snet/earnings")
+async def snet_earnings():
+    """Get earnings report for published services"""
+    snet = get_snet()
+    return await snet.get_earnings_report()
 
 if __name__ == "__main__":
     import uvicorn
