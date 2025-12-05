@@ -2,12 +2,13 @@ import { ReactNode, useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { 
-  Satellite, 
+  Shield, 
   Layers, 
   Flame, 
   Map, 
   Activity,
-  Circle 
+  Circle,
+  Globe
 } from 'lucide-react';
 import { healthCheck } from '../services/api';
 
@@ -61,22 +62,22 @@ const Layout = ({ children }: LayoutProps) => {
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             {/* Logo */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-              <Satellite style={{ width: '32px', height: '32px', color: '#2196F3' }} className="animate-pulse-slow" />
+              <Shield style={{ width: '32px', height: '32px', color: '#00FF41' }} className="animate-pulse-slow" />
               <div>
                 <h1 className="text-glow" style={{ 
                   fontSize: '1.875rem', 
                   fontWeight: 'bold', 
-                  color: '#2196F3',
+                  color: '#00FF41',
                   margin: 0 
                 }}>
-                  AstroGuard
+                  SafetyGuard AI
                 </h1>
                 <p className="font-mono" style={{ 
                   fontSize: '0.75rem', 
                   color: '#9ca3af',
                   margin: 0
                 }}>
-                  Mission Control v1.3
+                  Industrial Safety Platform v3.0 • Powered by SingularityNET
                 </p>
               </div>
             </div>
