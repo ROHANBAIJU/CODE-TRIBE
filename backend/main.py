@@ -53,6 +53,7 @@ else:
     print("📂 Running without MongoDB (logs will not be persisted)")
 
 # --- MODEL LOADER ---
+<<<<<<< PRANAV_BACKEND_CLEAN
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 MODELS_DIR = os.path.join(BASE_DIR, "models")
 
@@ -75,6 +76,30 @@ else:
     accuracy_model_source = "yolov8s.pt"
     print(f"⚠️  Trained accuracy model not found, using pretrained: {accuracy_model_source}")
 
+=======
+# Get absolute path to models directory
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+MODELS_DIR = os.path.join(BASE_DIR, "models")
+
+MODEL_PATH_SPEED = os.path.join(MODELS_DIR, "yolo_speed.pt")
+MODEL_PATH_ACCURACY = os.path.join(MODELS_DIR, "yolo_accuracy.pt")
+
+# Check if trained models exist, otherwise fall back to pretrained
+if os.path.exists(MODEL_PATH_SPEED):
+    speed_model_source = MODEL_PATH_SPEED
+    print(f"⚡ Loading Trained Speed Model: {speed_model_source}")
+else:
+    speed_model_source = "yolov8n.pt"
+    print(f"⚠️  Trained speed model not found, using pretrained: {speed_model_source}")
+
+if os.path.exists(MODEL_PATH_ACCURACY):
+    accuracy_model_source = MODEL_PATH_ACCURACY
+    print(f"🎯 Loading Trained Accuracy Model: {accuracy_model_source}")
+else:
+    accuracy_model_source = "yolov8s.pt"
+    print(f"⚠️  Trained accuracy model not found, using pretrained: {accuracy_model_source}")
+
+>>>>>>> main
 model_speed = YOLO(speed_model_source)
 model_accuracy = YOLO(accuracy_model_source)
 
