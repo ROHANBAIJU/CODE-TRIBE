@@ -226,6 +226,19 @@
 
 ### Validation & Proof Questions
 
+#### QX: "AstroOps generates synthetic images from the webcam feed. How do you avoid hallucinations or synthetic drift when you create a lot of these images?"
+
+**Answer:**
+> "We constrain synthetic generation with a three-layer guardrail:
+> 
+> 1) **Trigger filter**: AstroOps only fires on detections in the uncertainty band (0.45–0.65 confidence) and caps at **N=50 samples per hour** to avoid runaway generation.
+> 
+> 2) **Distribution check**: Each synthetic image is scored against real data stats (color histograms, object size/position priors, background entropy). Images outside 2σ are rejected. That prevents 'flying helmets' or impossible poses.
+> 
+> 3) **A/B validation + rollback**: New weights are tested on a held-out real set. If mAP or precision drops, or FP rate rises >1%, we **auto-rollback** to the previous weights. No synthetic passes without improving real-world metrics.
+> 
+> Net effect: Synthetic data is a precision tool, not a firehose. It targets edge cases, is distribution-aligned, and must beat the current model on real data before deployment."
+
 #### Q13: "You mentioned +14% accuracy improvement from Falcon-Link. Where's this number from? Show us the before/after metrics."
 
 **Answer:**

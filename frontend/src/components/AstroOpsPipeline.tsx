@@ -47,6 +47,7 @@ const AstroOpsPipeline = ({
   const [modelAccuracy, setModelAccuracy] = useState(0.72);
   const [falconStatus, setFalconStatus] = useState<FalconStatus | null>(null);
   const [selectedClass, setSelectedClass] = useState('OxygenTank');
+  const [trainingImages, setTrainingImages] = useState<Array<{filename: string; augmentation_type: string; image_base64: string}>>([]);
 
   const safetyClasses = [
     'OxygenTank', 'NitrogenTank', 'FirstAidBox', 'FireAlarm', 
@@ -145,6 +146,11 @@ const AstroOpsPipeline = ({
       
       // Real API call to generate synthetic images
       const result = await runHealingPipeline(selectedClass);
+      
+      // Store training images for display
+      if (result.training_images_preview && result.training_images_preview.length > 0) {
+        setTrainingImages(result.training_images_preview);
+      }
       
       // Animate the count
       const targetImages = result.synthetic_images_generated;
@@ -405,6 +411,48 @@ const AstroOpsPipeline = ({
           </AnimatePresence>
         </div>
       </div>
+
+      {/* Training Images Gallery - SHOW ONLY AFTER HEALING */}
+      {trainingImages.length > 0 && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="glass-panel p-4"
+        >
+          <div className="flex items-center gap-2 mb-3">
+            <Database className="w-5 h-5 text-terminal-green" />
+            <span className="text-sm font-bold text-terminal-green">
+              🦅 Augmented Training Data ({trainingImages.length} images)
+            </span>
+          </div>
+          <p className="text-xs text-gray-400 mb-3 font-mono">
+            Real training images with augmentations (rotation, brightness, flip, etc.)
+          </p>
+          
+          <div className="grid grid-cols-4 gap-2 max-h-64 overflow-y-auto">
+            {trainingImages.filter(img => img && img.image_base64).map((img, idx) => (
+              <motion.div
+                key={idx}
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: idx * 0.05 }}
+                className="relative group"
+              >
+                <img
+                  src={`data:image/png;base64,${img.image_base64}`}
+                  alt={img.augmentation_type || 'Training image'}
+                  className="w-full h-24 object-cover rounded border border-terminal-green/30 hover:border-terminal-green transition-colors"
+                />
+                <div className="absolute inset-0 bg-black/80 opacity-0 group-hover:opacity-100 transition-opacity rounded flex items-center justify-center p-1">
+                  <span className="text-[10px] text-terminal-green text-center font-mono">
+                    {img.augmentation_type ? img.augmentation_type.replace(/_/g, ' ') : 'training image'}
+                  </span>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        </motion.div>
+      )}
     </div>
   );
 };
