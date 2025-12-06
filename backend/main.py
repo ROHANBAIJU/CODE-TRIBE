@@ -8,11 +8,15 @@ import numpy as np
 import time
 import os
 from datetime import datetime
+from dotenv import load_dotenv
 from core.fusion_enhanced import FusionEnhanced  # Updated import
 from core.rnn_temporal import RNNTemporal  # New import
 from core.vlm_chat import get_vlm_chat, VLMProvider  # VLM Chat - The Brain
 from core.singularitynet import get_snet, init_snet  # SingularityNET integration
 from typing import List, Optional
+
+# Load environment variables
+load_dotenv()
 
 # Try to import motor for MongoDB (optional)
 try:
@@ -29,6 +33,17 @@ MONGO_URI = "mongodb://localhost:27017"
 DB_NAME = "safetyguard_db"
 COLLECTION_NAME = "falcon_logs"
 USE_MONGO = True  # MongoDB is now running!
+
+# Falcon API Configuration
+FALCON_API_KEY = os.getenv("FALCON_API_KEY")
+HUGGINGFACE_API_KEY = os.getenv("HUGGINGFACE_API_KEY")
+REPLICATE_API_KEY = os.getenv("REPLICATE_API_KEY")
+STABILITY_API_KEY = os.getenv("STABILITY_API_KEY")
+
+print(f"🔑 Falcon API Key: {'✅ Loaded' if FALCON_API_KEY and FALCON_API_KEY != 'your_falcon_api_key_here' else '❌ Not set'}")
+print(f"🤗 Hugging Face API Key: {'✅ Loaded' if HUGGINGFACE_API_KEY and HUGGINGFACE_API_KEY != 'your_hf_api_key_here' else '❌ Not set'}")
+print(f"🎨 Replicate API Key: {'✅ Loaded' if REPLICATE_API_KEY and REPLICATE_API_KEY != 'your_replicate_api_key_here' else '❌ Not set'}")
+print(f"🌟 Stability AI Key: {'✅ Loaded' if STABILITY_API_KEY and STABILITY_API_KEY != 'your_stability_ai_key_here' else '❌ Not set'}")
 
 app.add_middleware(
     CORSMiddleware,
@@ -711,6 +726,29 @@ async def get_synthetic_images():
         return {"images": images, "total": len(images)}
     else:
         return {"images": _synthetic_images, "total": len(_synthetic_images)}
+
+
+@app.get("/falcon/api-status")
+async def falcon_api_status():
+    """Check which Falcon external APIs are configured"""
+    return {
+        "falcon_api": {
+            "configured": bool(FALCON_API_KEY and FALCON_API_KEY != "your_falcon_api_key_here"),
+            "key_preview": f"{FALCON_API_KEY[:10]}..." if FALCON_API_KEY and FALCON_API_KEY != "your_falcon_api_key_here" else None
+        },
+        "huggingface": {
+            "configured": bool(HUGGINGFACE_API_KEY and HUGGINGFACE_API_KEY != "your_hf_api_key_here"),
+            "key_preview": f"{HUGGINGFACE_API_KEY[:10]}..." if HUGGINGFACE_API_KEY and HUGGINGFACE_API_KEY != "your_hf_api_key_here" else None
+        },
+        "replicate": {
+            "configured": bool(REPLICATE_API_KEY and REPLICATE_API_KEY != "your_replicate_api_key_here"),
+            "key_preview": f"{REPLICATE_API_KEY[:10]}..." if REPLICATE_API_KEY and REPLICATE_API_KEY != "your_replicate_api_key_here" else None
+        },
+        "stability_ai": {
+            "configured": bool(STABILITY_API_KEY and STABILITY_API_KEY != "your_stability_ai_key_here"),
+            "key_preview": f"{STABILITY_API_KEY[:10]}..." if STABILITY_API_KEY and STABILITY_API_KEY != "your_stability_ai_key_here" else None
+        }
+    }
 
 
 @app.post("/falcon/edge-case")
