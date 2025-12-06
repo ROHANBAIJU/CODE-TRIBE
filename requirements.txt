@@ -1,0 +1,29 @@
+# SafetyGuard AI - Backend Dependencies
+# Python 3.10+
+
+# Web Framework
+fastapi==0.115.6
+uvicorn[standard]==0.34.0
+python-multipart==0.0.20
+websockets==14.1
+
+# CORS & Security
+python-dotenv==1.0.1
+
+# Computer Vision & ML
+ultralytics==8.3.68
+torch==2.5.1
+torchvision==0.20.1
+opencv-python-headless==4.10.0.84
+pillow==11.0.0
+numpy==1.26.4
+
+# HTTP Client
+httpx==0.28.1
+
+# Data Validation
+pydantic==2.10.5
+
+# Optional: MongoDB (not required for deployment)
+# motor==3.6.0
+# pymongo==4.10.1

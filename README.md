@@ -114,11 +114,12 @@ Self-healing pipeline when confidence drops:
 ## 🚀 Quick Start
 
 ### Prerequisites
-- Docker & Docker Compose
+- Docker & Docker Compose (for local development)
+- Python 3.10+ & Node.js 18+ (for local development)
 - NVIDIA GPU (optional, for faster inference)
 - Groq API key (optional, for VLM features)
 
-### Option 1: Docker (Recommended)
+### Option 1: Docker (Recommended for Local Development)
 
 ```bash
 # Clone the repository
@@ -150,6 +151,21 @@ cd frontend
 npm install
 npm run dev
 ```
+
+### Option 3: Production Deployment
+
+**Backend:** Deploy to [Render.com](https://render.com) (Free tier available)  
+**Frontend:** Deploy to [Vercel](https://vercel.com) (Free tier available)
+
+📖 **See [DEPLOYMENT.md](DEPLOYMENT.md) for complete deployment guide**
+
+---
+
+## 🌐 Live Demo
+
+- **Frontend:** `https://your-app.vercel.app` (Deploy your own!)
+- **Backend API:** `https://your-backend.onrender.com` (Deploy your own!)
+- **API Docs:** `https://your-backend.onrender.com/docs`
 
 ---
 
@@ -216,8 +232,11 @@ npm run dev
 ## 📚 Documentation
 
 For comprehensive information, see:
-- **[QUESTIONS.md](DOCUMENTS-IMPORTANT/QUESTIONS.md)** - Judge Q&A preparation, competitor analysis, and strategic positioning
-- **[COMPETITOR_ANALYSIS.md](DOCUMENTS-IMPORTANT/COMPETITOR_ANALYSIS.md)** - Detailed market comparison
+- **[DEPLOYMENT.md](DEPLOYMENT.md)** - Complete deployment guide for Render & Vercel
+- **[QUICKSTART.md](QUICKSTART.md)** - Get started in under 5 minutes
+- **[PRESENTATION.md](PRESENTATION.md)** - Hackathon presentation script
+- **[QUESTIONS.md](DOCUMENTS-IMPORTANT/QUESTIONS.md)** - Judge Q&A preparation
+- **[COMPETITOR_ANALYSIS.md](DOCUMENTS-IMPORTANT/COMPETITOR_ANALYSIS.md)** - Market comparison
 
 ---
 

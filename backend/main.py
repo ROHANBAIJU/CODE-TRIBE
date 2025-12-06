@@ -21,6 +21,9 @@ from typing import List, Optional
 # Load environment variables
 load_dotenv()
 
+# Get CORS origins from environment variable
+CORS_ORIGINS = os.getenv("CORS_ORIGINS", "http://localhost:5173,http://localhost:3000").split(",")
+
 # Try to import motor for MongoDB (optional)
 try:
     import motor.motor_asyncio
@@ -32,10 +35,10 @@ except ImportError:
 app = FastAPI(title="SafetyGuard AI", version="3.0.0")  # Rebranded!
 
 # --- CONFIGURATION ---
-MONGO_URI = "mongodb://localhost:27017" 
-DB_NAME = "safetyguard_db"
+MONGO_URI = os.getenv("MONGO_URI", "mongodb://localhost:27017")
+DB_NAME = os.getenv("DB_NAME", "safetyguard_db")
 COLLECTION_NAME = "falcon_logs"
-USE_MONGO = True  # MongoDB is now running!
+USE_MONGO = False  # MongoDB is optional, disabled by default
 
 # Falcon API Configuration
 FALCON_API_KEY = os.getenv("FALCON_API_KEY")
@@ -47,10 +50,11 @@ print(f"🔑 Falcon API Key: {'✅ Loaded' if FALCON_API_KEY and FALCON_API_KEY 
 print(f"🤗 Hugging Face API Key: {'✅ Loaded' if HUGGINGFACE_API_KEY and HUGGINGFACE_API_KEY != 'your_hf_api_key_here' else '❌ Not set'}")
 print(f"🎨 Replicate API Key: {'✅ Loaded' if REPLICATE_API_KEY and REPLICATE_API_KEY != 'your_replicate_api_key_here' else '❌ Not set'}")
 print(f"🌟 Stability AI Key: {'✅ Loaded' if STABILITY_API_KEY and STABILITY_API_KEY != 'your_stability_ai_key_here' else '❌ Not set'}")
+print(f"🌐 CORS Origins: {CORS_ORIGINS}")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=CORS_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
