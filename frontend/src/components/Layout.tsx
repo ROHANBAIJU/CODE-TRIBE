@@ -154,7 +154,7 @@ const Layout = ({ children }: LayoutProps) => {
             display: 'flex', 
             flexDirection: 'column', 
             alignItems: sidebarExpanded ? 'stretch' : 'center', 
-            padding: '2rem 1rem',
+            padding: '2rem 0',
             gap: '1rem'
           }}>
             {navItems.map((item) => {
@@ -162,59 +162,52 @@ const Layout = ({ children }: LayoutProps) => {
               const isActive = location.pathname === item.path;
               
               return (
-                <Link
+                <div
                   key={item.path}
-                  to={item.path}
                   style={{ 
                     position: 'relative',
-                    textDecoration: 'none'
+                    width: '100%',
+                    display: 'flex',
+                    justifyContent: 'center'
                   }}
                 >
-                  <motion.div
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    style={{
-                      padding: '0.75rem',
-                      borderRadius: '0.5rem',
-                      backgroundColor: isActive ? 'rgba(33, 150, 243, 0.2)' : 'transparent',
-                      color: isActive ? '#2196F3' : '#9ca3af',
-                      transition: 'all 0.3s',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '0.75rem',
-                      justifyContent: sidebarExpanded ? 'flex-start' : 'center'
+                  <Link
+                    to={item.path}
+                    style={{ 
+                      textDecoration: 'none',
+                      width: sidebarExpanded ? '100%' : 'auto'
                     }}
                   >
-                    <Icon style={{ width: '24px', height: '24px', flexShrink: 0 }} />
-                    {sidebarExpanded && (
-                      <span className="font-mono" style={{ 
-                        fontSize: '0.875rem',
-                        whiteSpace: 'nowrap',
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis'
-                      }}>
-                        {item.label}
-                      </span>
-                    )}
-                  </motion.div>
-                  
-                  {/* Active Indicator */}
-                  {isActive && !sidebarExpanded && (
                     <motion.div
-                      layoutId="activeTab"
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
                       style={{
-                        position: 'absolute',
-                        right: '-2px',
-                        top: '50%',
-                        transform: 'translateY(-50%)',
-                        width: '4px',
-                        height: '32px',
-                        backgroundColor: '#00FF41',
-                        borderRadius: '9999px'
+                        padding: sidebarExpanded ? '0.75rem 1rem' : '0.75rem',
+                        borderRadius: '0.5rem',
+                        backgroundColor: isActive ? 'rgba(33, 150, 243, 0.2)' : 'transparent',
+                        color: isActive ? '#2196F3' : '#9ca3af',
+                        transition: 'all 0.3s',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.75rem',
+                        justifyContent: sidebarExpanded ? 'flex-start' : 'center',
+                        margin: sidebarExpanded ? '0 1rem' : '0'
                       }}
-                    />
-                  )}
-                </Link>
+                    >
+                      <Icon style={{ width: '24px', height: '24px', flexShrink: 0 }} />
+                      {sidebarExpanded && (
+                        <span className="font-mono" style={{ 
+                          fontSize: '0.875rem',
+                          whiteSpace: 'nowrap',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis'
+                        }}>
+                          {item.label}
+                        </span>
+                      )}
+                    </motion.div>
+                  </Link>
+                </div>
               );
             })}
           </div>
