@@ -39,9 +39,24 @@ const Dashboard = () => {
   const [showAstroOps, setShowAstroOps] = useState(false);
   const [isHealed, setIsHealed] = useState(false);
   const [healingClass, setHealingClass] = useState<string | null>(null);
+  const [isWebcamActive, setIsWebcamActive] = useState(false);
+  const [webcamStream, setWebcamStream] = useState<MediaStream | null>(null);
+  const [webcamDetections, setWebcamDetections] = useState<Detection[]>([]);
+  const [webcamFps, setWebcamFps] = useState(0);
+  const [isVideo, setIsVideo] = useState(false);
+  const [videoDetections, setVideoDetections] = useState<Detection[]>([]);
+  const [videoFrameDetections, setVideoFrameDetections] = useState<Map<number, Detection[]>>(new Map());
+  const [videoFps, setVideoFps] = useState(30);
+  const [videoProcessedFrames, setVideoProcessedFrames] = useState(0);
+  const [currentVideoFrame, setCurrentVideoFrame] = useState(0);
   
   const fileInputRef = useRef<HTMLInputElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const webcamRef = useRef<HTMLVideoElement>(null);
+  const webcamCanvasRef = useRef<HTMLCanvasElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const videoCanvasRef = useRef<HTMLCanvasElement>(null);
+  const wsRef = useRef<WebSocket | null>(null);
 
   // Handler for when healing completes - boost detection confidence
   const handleHealingComplete = (healedClass: string) => {
@@ -80,46 +95,374 @@ const Dashboard = () => {
     }, 5000);
   };
 
+  // ===== WEBCAM FUNCTIONS =====
+  const startWebcam = async () => {
+    try {
+      stopWebcam();
+      setIsWebcamActive(true);
+      setSelectedImage(null);
+      setIsVideo(false);
+      
+      const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+      console.log('📹 Got camera stream:', stream);
+      setWebcamStream(stream);
+    } catch (error) {
+      console.error('Failed to start webcam:', error);
+      setIsWebcamActive(false);
+      alert('Failed to access camera: ' + error);
+    }
+  };
+
+  const stopWebcam = () => {
+    // Close WebSocket
+    if (wsRef.current) {
+      wsRef.current.close();
+      wsRef.current = null;
+    }
+    if (webcamStream) {
+      webcamStream.getTracks().forEach(track => track.stop());
+    }
+    if (webcamRef.current) {
+      webcamRef.current.srcObject = null;
+    }
+    setIsWebcamActive(false);
+    setWebcamStream(null);
+    setWebcamDetections([]);
+    setWebcamFps(0);
+  };
+
+  // Connect to WebSocket for real-time detection
+  const connectWebSocket = () => {
+    const ws = new WebSocket('ws://localhost:8000/ws/webcam');
+    wsRef.current = ws;
+    
+    ws.onopen = () => {
+      console.log('📹 WebSocket connected');
+      startFrameLoop();
+    };
+    
+    ws.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+      if (data.type === 'detection') {
+        setWebcamDetections(data.detections || []);
+        setInferenceTime(data.latency_ms || 0);
+        setWebcamFps(data.fps || 0);
+        setFalconTriggered(data.falcon_trigger || false);
+        drawWebcamDetections(data.detections || []);
+      }
+    };
+    
+    ws.onerror = (err) => console.error('WebSocket error:', err);
+    ws.onclose = () => console.log('📹 WebSocket disconnected');
+  };
+
+  // Send frames to backend
+  const startFrameLoop = () => {
+    const loop = () => {
+      if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) return;
+      if (!webcamRef.current) return;
+      
+      const video = webcamRef.current;
+      if (video.readyState < 2) {
+        requestAnimationFrame(loop);
+        return;
+      }
+      
+      // Create temp canvas for frame capture
+      const tempCanvas = document.createElement('canvas');
+      tempCanvas.width = video.videoWidth || 640;
+      tempCanvas.height = video.videoHeight || 480;
+      const ctx = tempCanvas.getContext('2d');
+      if (!ctx) { requestAnimationFrame(loop); return; }
+      
+      ctx.drawImage(video, 0, 0);
+      const frameData = tempCanvas.toDataURL('image/jpeg', 0.6);
+      
+      wsRef.current.send(JSON.stringify({ type: 'frame', data: frameData }));
+      
+      // Continue at ~10 FPS
+      setTimeout(() => requestAnimationFrame(loop), 100);
+    };
+    loop();
+  };
+
+  // Draw bounding boxes on webcam canvas overlay
+  const drawWebcamDetections = (dets: Detection[]) => {
+    const canvas = webcamCanvasRef.current;
+    const video = webcamRef.current;
+    if (!canvas || !video) return;
+    
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    
+    const rect = video.getBoundingClientRect();
+    canvas.width = rect.width;
+    canvas.height = rect.height;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+    const scaleX = rect.width / (video.videoWidth || 640);
+    const scaleY = rect.height / (video.videoHeight || 480);
+    
+    dets.forEach((det) => {
+      if (!det.bbox || !det.class) return;
+      const [x1, y1, x2, y2] = det.bbox;
+      const color = classColors[det.class] || '#00FF41';
+      
+      const sx1 = x1 * scaleX, sy1 = y1 * scaleY;
+      const sx2 = x2 * scaleX, sy2 = y2 * scaleY;
+      
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 3;
+      ctx.strokeRect(sx1, sy1, sx2 - sx1, sy2 - sy1);
+      
+      const label = `${det.class} ${((det.confidence ?? 0) * 100).toFixed(0)}%`;
+      ctx.font = 'bold 14px monospace';
+      const textWidth = ctx.measureText(label).width;
+      ctx.fillStyle = color;
+      ctx.fillRect(sx1, sy1 - 22, textWidth + 10, 22);
+      ctx.fillStyle = '#000';
+      ctx.fillText(label, sx1 + 5, sy1 - 6);
+    });
+  };
+
+  // Draw bounding boxes on video canvas overlay
+  const drawVideoDetections = (dets: Detection[]) => {
+    const canvas = videoCanvasRef.current;
+    const video = videoRef.current;
+    if (!canvas || !video) return;
+    
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    
+    const rect = video.getBoundingClientRect();
+    canvas.width = rect.width;
+    canvas.height = rect.height;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+    const scaleX = rect.width / (video.videoWidth || 1280);
+    const scaleY = rect.height / (video.videoHeight || 720);
+    
+    dets.forEach((det) => {
+      if (!det.bbox || !det.class) return;
+      const [x1, y1, x2, y2] = det.bbox;
+      const color = classColors[det.class] || '#00FF41';
+      
+      const sx1 = x1 * scaleX, sy1 = y1 * scaleY;
+      const sx2 = x2 * scaleX, sy2 = y2 * scaleY;
+      
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 3;
+      ctx.strokeRect(sx1, sy1, sx2 - sx1, sy2 - sy1);
+      
+      const label = `${det.class} ${((det.confidence ?? 0) * 100).toFixed(0)}%`;
+      ctx.font = 'bold 14px monospace';
+      const textWidth = ctx.measureText(label).width;
+      ctx.fillStyle = color;
+      ctx.fillRect(sx1, sy1 - 22, textWidth + 10, 22);
+      ctx.fillStyle = '#000';
+      ctx.fillText(label, sx1 + 5, sy1 - 6);
+    });
+  };
+
+  // Effect to attach webcam stream to video element
+  useEffect(() => {
+    if (webcamStream && webcamRef.current && isWebcamActive) {
+      console.log('📹 Attaching stream to video element');
+      webcamRef.current.srcObject = webcamStream;
+      webcamRef.current.play()
+        .then(() => {
+          console.log('📹 Video playing!');
+          // Connect WebSocket after video starts
+          connectWebSocket();
+        })
+        .catch(err => console.error('📹 Play error:', err));
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [webcamStream, isWebcamActive]);
+
+  // Cleanup webcam on unmount
+  useEffect(() => {
+    return () => {
+      if (webcamStream) {
+        webcamStream.getTracks().forEach(track => track.stop());
+      }
+    };
+  }, [webcamStream]);
+
+  // Redraw video detections when they change or video loads
+  // This syncs bounding boxes with video playback frame-by-frame
+  useEffect(() => {
+    if (isVideo && videoFrameDetections.size > 0 && videoRef.current) {
+      const video = videoRef.current;
+      const frameKeys = Array.from(videoFrameDetections.keys()).sort((a, b) => a - b);
+      
+      const handleTimeUpdate = () => {
+        if (!video) return;
+        
+        // Calculate current frame based on video time and fps
+        const currentTime = video.currentTime;
+        const currentFrame = Math.floor(currentTime * videoFps);
+        setCurrentVideoFrame(currentFrame);
+        
+        // Find the closest analyzed frame
+        let closestFrame = frameKeys[0];
+        for (const frameKey of frameKeys) {
+          if (frameKey <= currentFrame) {
+            closestFrame = frameKey;
+          } else {
+            break;
+          }
+        }
+        
+        // Get detections for this frame and draw them
+        const frameDets = videoFrameDetections.get(closestFrame) || [];
+        setVideoDetections(frameDets);
+        setDetections(frameDets);
+        drawVideoDetections(frameDets);
+      };
+      
+      video.addEventListener('timeupdate', handleTimeUpdate);
+      video.addEventListener('loadeddata', () => {
+        // Draw first frame detections when video loads
+        const firstDets = videoFrameDetections.get(frameKeys[0]) || [];
+        drawVideoDetections(firstDets);
+      });
+      video.addEventListener('play', handleTimeUpdate);
+      video.addEventListener('seeked', handleTimeUpdate);
+      
+      // Initial draw
+      setTimeout(() => {
+        const firstDets = videoFrameDetections.get(frameKeys[0]) || [];
+        drawVideoDetections(firstDets);
+      }, 200);
+      
+      return () => {
+        video.removeEventListener('timeupdate', handleTimeUpdate);
+        video.removeEventListener('play', handleTimeUpdate);
+        video.removeEventListener('seeked', handleTimeUpdate);
+      };
+    }
+  }, [isVideo, videoFrameDetections, videoFps]);
+
   const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
+    // Stop webcam if active
+    stopWebcam();
     setSelectedFile(file);
     
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      setSelectedImage(e.target?.result as string);
-    };
-    reader.readAsDataURL(file);
-
-    setIsProcessing(true);
-    try {
-      const result: InferenceResponse = await detectObjects(file);
-      // Normalize detections to handle both API formats (box/score/label or bbox/confidence/class)
-      const normalizedDetections = (result.detections || []).map(d => ({
-        bbox: d.box || d.bbox || [0, 0, 0, 0],
-        confidence: d.score ?? d.confidence ?? 0,
-        class: d.label || d.class || 'Unknown',
-        track_id: d.track_id,
-        track_age: d.track_age,
-        temporal_boost: d.temporal_boost,
-      }));
-      setDetections(normalizedDetections);
-      setInferenceTime(result.latency_ms || result.inference_time || 0);
-      setFalconTriggered(result.falcon_trigger ?? result.falcon_triggered ?? false);
+    // Check if it's a video file
+    const isVideoFile = file.type.startsWith('video/');
+    setIsVideo(isVideoFile);
+    
+    if (isVideoFile) {
+      // Handle video file
+      const videoUrl = URL.createObjectURL(file);
+      setSelectedImage(videoUrl);
       
-      const firstConf = normalizedDetections[0]?.confidence;
-      const newLog = {
-        timestamp: new Date().toLocaleTimeString(),
-        objects: result.count ?? result.total_objects ?? normalizedDetections.length,
-        confidence: firstConf !== undefined ? firstConf.toFixed(2) : 'N/A',
-        falcon: result.falcon_trigger ?? result.falcon_triggered ?? false,
+      setIsProcessing(true);
+      try {
+        const formData = new FormData();
+        formData.append('file', file);
+        
+        console.log('🎬 Uploading video for frame-by-frame analysis...');
+        
+        const response = await fetch('http://localhost:8000/detect/video', {
+          method: 'POST',
+          body: formData,
+        });
+        
+        if (!response.ok) throw new Error('Video detection failed');
+        
+        const result = await response.json();
+        
+        // Store per-frame detections in a Map (frame_index -> detections)
+        const frameDetectionsMap = new Map<number, Detection[]>();
+        let totalLatency = 0;
+        
+        if (result.frames) {
+          console.log(`🎬 Received ${result.frames.length} analyzed frames`);
+          result.frames.forEach((frame: { frame?: number, detections?: Detection[], latency_ms?: number }) => {
+            const frameIdx = frame.frame ?? 0;
+            const dets = (frame.detections || []).map(d => ({
+              bbox: d.bbox || [0, 0, 0, 0],
+              confidence: d.confidence ?? 0,
+              class: d.class || 'Unknown',
+              track_id: d.track_id,
+            }));
+            frameDetectionsMap.set(frameIdx, dets);
+            totalLatency += frame.latency_ms || 0;
+          });
+        }
+        
+        // Store the frame detections map
+        setVideoFrameDetections(frameDetectionsMap);
+        setVideoFps(result.video_info?.fps || 30);
+        setVideoProcessedFrames(result.video_info?.processed_frames || frameDetectionsMap.size);
+        
+        // Set initial detections from first frame
+        const firstFrameKey = Math.min(...Array.from(frameDetectionsMap.keys()));
+        const initialDets = frameDetectionsMap.get(firstFrameKey) || [];
+        setDetections(initialDets);
+        setVideoDetections(initialDets);
+        
+        setInferenceTime(result.avg_latency_ms || (totalLatency / Math.max(frameDetectionsMap.size, 1)));
+        setFalconTriggered(result.falcon_triggered || false);
+        
+        const newLog = {
+          timestamp: new Date().toLocaleTimeString(),
+          objects: result.total_objects || 0,
+          confidence: result.avg_confidence?.toFixed(2) || 'N/A',
+          falcon: result.falcon_triggered || false,
+        };
+        setLogs(prev => [newLog, ...prev].slice(0, 10));
+        
+        console.log(`🎬 Video ready! ${frameDetectionsMap.size} frames with detections. Press play to see live bounding boxes.`);
+        
+      } catch (error) {
+        console.error('Video detection failed:', error);
+        alert('Video detection failed: ' + error);
+      } finally {
+        setIsProcessing(false);
+      }
+    } else {
+      // Handle image file
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setSelectedImage(e.target?.result as string);
       };
-      setLogs(prev => [newLog, ...prev].slice(0, 10));
-    } catch (error) {
-      console.error('Detection failed:', error);
-    } finally {
-      setIsProcessing(false);
+      reader.readAsDataURL(file);
+
+      setIsProcessing(true);
+      try {
+        const result: InferenceResponse = await detectObjects(file);
+        // Normalize detections to handle both API formats (box/score/label or bbox/confidence/class)
+        const normalizedDetections = (result.detections || []).map(d => ({
+          bbox: d.box || d.bbox || [0, 0, 0, 0],
+          confidence: d.score ?? d.confidence ?? 0,
+          class: d.label || d.class || 'Unknown',
+          track_id: d.track_id,
+          track_age: d.track_age,
+          temporal_boost: d.temporal_boost,
+        }));
+        setDetections(normalizedDetections);
+        setInferenceTime(result.latency_ms || result.inference_time || 0);
+        setFalconTriggered(result.falcon_trigger ?? result.falcon_triggered ?? false);
+        
+        const firstConf = normalizedDetections[0]?.confidence;
+        const newLog = {
+          timestamp: new Date().toLocaleTimeString(),
+          objects: result.count ?? result.total_objects ?? normalizedDetections.length,
+          confidence: firstConf !== undefined ? firstConf.toFixed(2) : 'N/A',
+          falcon: result.falcon_trigger ?? result.falcon_triggered ?? false,
+        };
+        setLogs(prev => [newLog, ...prev].slice(0, 10));
+      } catch (error) {
+        console.error('Detection failed:', error);
+      } finally {
+        setIsProcessing(false);
+      }
     }
   };
 
@@ -297,9 +640,25 @@ const Dashboard = () => {
           >
             <Upload style={{ width: '18px', height: '18px' }} /> <span>Upload</span>
           </motion.button>
+
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={isWebcamActive ? stopWebcam : startWebcam}
+            style={{
+              display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.75rem 1rem',
+              background: isWebcamActive ? 'rgba(252, 61, 33, 0.3)' : 'rgba(0, 255, 65, 0.2)', 
+              border: isWebcamActive ? '1px solid #FC3D21' : '1px solid #00FF41',
+              borderRadius: '0.5rem', color: '#e5e7eb', fontSize: '0.875rem',
+              fontFamily: 'monospace', cursor: 'pointer'
+            }}
+          >
+            <Camera style={{ width: '18px', height: '18px' }} /> 
+            <span>{isWebcamActive ? 'Stop Cam' : 'Webcam'}</span>
+          </motion.button>
         </div>
         
-        <input ref={fileInputRef} type="file" accept="image/*" onChange={handleImageUpload} style={{ display: 'none' }} />
+        <input ref={fileInputRef} type="file" accept="image/*,video/*" onChange={handleImageUpload} style={{ display: 'none' }} />
       </div>
 
       {/* Main Content Grid */}
@@ -317,7 +676,109 @@ const Dashboard = () => {
             <div className="glass-panel hud-border" style={{ padding: '1.5rem', position: 'relative', overflow: 'hidden' }}>
               <div className="scan-line"></div>
               
-              {!selectedImage ? (
+              {isWebcamActive ? (
+                <div style={{ position: 'relative', backgroundColor: '#000', minHeight: '300px' }}>
+                  <video 
+                    ref={webcamRef}
+                    autoPlay
+                    playsInline
+                    muted
+                    style={{ 
+                      width: '100%', 
+                      height: 'auto',
+                      borderRadius: '0.5rem', 
+                      display: 'block'
+                    }}
+                  />
+                  {/* Canvas overlay for detections */}
+                  <canvas 
+                    ref={webcamCanvasRef}
+                    style={{
+                      position: 'absolute',
+                      top: 0,
+                      left: 0,
+                      width: '100%',
+                      height: '100%',
+                      pointerEvents: 'none',
+                      borderRadius: '0.5rem'
+                    }}
+                  />
+                  {/* Live indicator with stats */}
+                  <div style={{
+                    position: 'absolute', top: '10px', right: '10px',
+                    background: 'rgba(0, 0, 0, 0.7)', padding: '8px 12px',
+                    borderRadius: '8px', fontFamily: 'monospace', fontSize: '12px',
+                    display: 'flex', flexDirection: 'column', gap: '4px'
+                  }}>
+                    <span style={{ color: '#00FF41' }}>🔴 LIVE</span>
+                    <span style={{ color: '#00FF41' }}>{webcamDetections.length} objects</span>
+                    <span style={{ color: '#2196F3' }}>{webcamFps.toFixed(1)} FPS</span>
+                  </div>
+                </div>
+              ) : isVideo && selectedImage ? (
+                <div style={{ position: 'relative' }}>
+                  <video 
+                    ref={videoRef}
+                    src={selectedImage}
+                    controls
+                    onLoadedMetadata={() => {
+                      // Redraw detections when video metadata is loaded
+                      if (videoDetections.length > 0) {
+                        setTimeout(() => drawVideoDetections(videoDetections), 100);
+                      }
+                    }}
+                    onPlay={() => {
+                      // Redraw detections when video plays
+                      if (videoDetections.length > 0) {
+                        drawVideoDetections(videoDetections);
+                      }
+                    }}
+                    style={{ 
+                      width: '100%', 
+                      height: 'auto',
+                      borderRadius: '0.5rem', 
+                      display: 'block'
+                    }}
+                  />
+                  {/* Canvas overlay for bounding boxes */}
+                  <canvas 
+                    ref={videoCanvasRef}
+                    style={{
+                      position: 'absolute',
+                      top: 0,
+                      left: 0,
+                      width: '100%',
+                      height: '100%',
+                      pointerEvents: 'none',
+                      borderRadius: '0.5rem'
+                    }}
+                  />
+                  {/* Video detection stats */}
+                  {videoFrameDetections.size > 0 && !isProcessing && (
+                    <div style={{
+                      position: 'absolute', top: '10px', right: '10px',
+                      background: 'rgba(0, 0, 0, 0.7)', padding: '8px 12px',
+                      borderRadius: '8px', fontFamily: 'monospace', fontSize: '12px',
+                      display: 'flex', flexDirection: 'column', gap: '4px'
+                    }}>
+                      <span style={{ color: '#2196F3' }}>📹 AI ANALYSIS</span>
+                      <span style={{ color: '#00FF41' }}>{videoDetections.length} objects</span>
+                      <span style={{ color: '#9370DB' }}>Frame: {currentVideoFrame}</span>
+                      <span style={{ color: '#fbbf24' }}>{videoProcessedFrames} frames analyzed</span>
+                    </div>
+                  )}
+                  {isProcessing && (
+                    <div style={{
+                      position: 'absolute', inset: 0, backgroundColor: 'rgba(10, 14, 26, 0.8)',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center'
+                    }}>
+                      <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}>
+                        <Cpu style={{ width: '48px', height: '48px', color: '#2196F3' }} />
+                      </motion.div>
+                    </div>
+                  )}
+                </div>
+              ) : !selectedImage ? (
                 <div style={{
                   aspectRatio: '16/9', backgroundColor: 'rgba(20, 27, 45, 0.6)',
                   borderRadius: '0.5rem', display: 'flex', flexDirection: 'column',
@@ -327,7 +788,7 @@ const Dashboard = () => {
                   <Camera style={{ width: '64px', height: '64px', color: '#4b5563', marginBottom: '1rem' }} />
                   <p className="font-mono" style={{ color: '#9ca3af' }}>No image selected</p>
                   <p className="font-mono" style={{ fontSize: '0.875rem', color: '#6b7280', marginTop: '0.5rem' }}>
-                    Upload an image to start detection
+                    Upload an image or use Webcam
                   </p>
                 </div>
               ) : (

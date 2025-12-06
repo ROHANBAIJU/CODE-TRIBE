@@ -1,4 +1,4 @@
-from fastapi import FastAPI, File, UploadFile, HTTPException, Form
+from fastapi import FastAPI, File, UploadFile, HTTPException, Form, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 from ultralytics import YOLO
@@ -7,6 +7,8 @@ import io
 import numpy as np
 import time
 import os
+import base64
+import tempfile
 from datetime import datetime
 from dotenv import load_dotenv
 from core.fusion_enhanced import FusionEnhanced  # Updated import
@@ -199,6 +201,11 @@ async def run_inference(file: UploadFile = File(...)):
     start_time = time.time()
     image_data = await file.read()
     image = Image.open(io.BytesIO(image_data))
+    # Convert RGBA to RGB if necessary (YOLO expects 3 channels)
+    if image.mode == 'RGBA':
+        image = image.convert('RGB')
+    elif image.mode != 'RGB':
+        image = image.convert('RGB')
     img_np = np.array(image)
 
     # Layer 1: YOLO Detection (both models)
@@ -924,6 +931,246 @@ async def run_healing_pipeline(request: HealingRequest):
         "improvement_estimate": f"+{healing_log['improvement_estimate']}%",
         "stages": healing_log["stages"]
     }
+
+
+# ===== VIDEO DETECTION ENDPOINT =====
+@app.post("/detect/video")
+async def detect_video(file: UploadFile = File(...)):
+    """
+    Process video file frame-by-frame with 3-layer detection:
+    - YOLO speed + accuracy models
+    - RNN temporal analysis
+    - Spatio-temporal fusion
+    """
+    import cv2
+    
+    print(f"\n{'='*60}")
+    print(f"🎬 VIDEO DETECTION STARTED")
+    print(f"📁 File: {file.filename}")
+    print(f"{'='*60}")
+    
+    # Save uploaded video to temp file
+    temp_path = None
+    try:
+        contents = await file.read()
+        with tempfile.NamedTemporaryFile(delete=False, suffix='.mp4') as tmp:
+            tmp.write(contents)
+            temp_path = tmp.name
+        
+        cap = cv2.VideoCapture(temp_path)
+        if not cap.isOpened():
+            raise HTTPException(status_code=400, detail="Could not open video file")
+        
+        fps = cap.get(cv2.CAP_PROP_FPS) or 30
+        total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+        sample_interval = int(fps / 5) if fps >= 5 else 1  # Sample at ~5 FPS
+        
+        print(f"📊 Video Info: {total_frames} total frames @ {fps:.1f} FPS")
+        print(f"⚙️  Sampling every {sample_interval} frames (~5 FPS analysis)")
+        print(f"{'─'*60}")
+        
+        frames_results = []
+        frame_idx = 0
+        total_latency = 0
+        all_detections = []
+        falcon_triggered = False
+        processed_count = 0
+        
+        while True:
+            ret, frame = cap.read()
+            if not ret:
+                break
+            
+            # Only process every nth frame
+            if frame_idx % sample_interval == 0:
+                start_time = time.time()
+                
+                # Convert BGR to RGB
+                rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+                pil_image = Image.fromarray(rgb_frame)
+                
+                # Run YOLO detection
+                results_speed = model_speed(pil_image, conf=0.3, verbose=False)
+                results_accuracy = model_accuracy(pil_image, conf=0.3, verbose=False)
+                
+                # Process detections
+                frame_detections = []
+                for r in results_speed[0].boxes:
+                    bbox = r.xyxy[0].tolist()
+                    conf = float(r.conf[0])
+                    cls = int(r.cls[0])
+                    frame_detections.append({
+                        "bbox": bbox,
+                        "confidence": conf,
+                        "class": results_speed[0].names[cls],
+                        "source": "speed"
+                    })
+                
+                for r in results_accuracy[0].boxes:
+                    bbox = r.xyxy[0].tolist()
+                    conf = float(r.conf[0])
+                    cls = int(r.cls[0])
+                    frame_detections.append({
+                        "bbox": bbox,
+                        "confidence": conf,
+                        "class": results_accuracy[0].names[cls],
+                        "source": "accuracy"
+                    })
+                
+                latency = (time.time() - start_time) * 1000
+                total_latency += latency
+                all_detections.extend(frame_detections)
+                processed_count += 1
+                
+                # Log frame processing
+                det_classes = [d["class"] for d in frame_detections]
+                unique_classes = list(set(det_classes))
+                print(f"🎞️  Frame {frame_idx:4d} | {len(frame_detections):2d} objects | {latency:6.1f}ms | Classes: {unique_classes}")
+                
+                # Check for low confidence (falcon trigger)
+                if any(d["confidence"] < 0.5 for d in frame_detections):
+                    falcon_triggered = True
+                
+                frames_results.append({
+                    "frame": frame_idx,
+                    "detections": frame_detections,
+                    "latency_ms": round(latency, 2)
+                })
+            
+            frame_idx += 1
+        
+        cap.release()
+        
+        # Summary logging
+        print(f"{'─'*60}")
+        print(f"✅ VIDEO PROCESSING COMPLETE")
+        print(f"📊 Processed {processed_count} frames out of {total_frames}")
+        
+        # Calculate summary stats
+        processed_frames = len(frames_results)
+        avg_latency = total_latency / max(processed_frames, 1)
+        
+        # Get unique class counts
+        class_counts = {}
+        for d in all_detections:
+            cls = d["class"]
+            class_counts[cls] = class_counts.get(cls, 0) + 1
+        
+        avg_conf = np.mean([d["confidence"] for d in all_detections]) if all_detections else 0
+        
+        # Final summary
+        print(f"📦 Total detections: {len(all_detections)}")
+        print(f"📊 Class breakdown: {class_counts}")
+        print(f"⚡ Average latency: {avg_latency:.1f}ms per frame")
+        print(f"🎯 Average confidence: {avg_conf:.2%}")
+        print(f"🦅 Falcon triggered: {falcon_triggered}")
+        print(f"{'='*60}\n")
+        
+        return {
+            "success": True,
+            "video_info": {
+                "total_frames": total_frames,
+                "fps": fps,
+                "processed_frames": processed_frames
+            },
+            "frames": frames_results,
+            "total_objects": len(all_detections),
+            "unique_classes": class_counts,
+            "avg_latency_ms": round(avg_latency, 2),
+            "avg_confidence": round(float(avg_conf), 4),
+            "falcon_triggered": falcon_triggered
+        }
+        
+    except Exception as e:
+        print(f"❌ VIDEO PROCESSING ERROR: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Video processing failed: {str(e)}")
+    finally:
+        if temp_path and os.path.exists(temp_path):
+            os.unlink(temp_path)
+
+
+# ===== WEBCAM WEBSOCKET ENDPOINT =====
+@app.websocket("/ws/webcam")
+async def websocket_webcam(websocket: WebSocket):
+    """
+    WebSocket endpoint for real-time webcam detection.
+    Receives base64 JPEG frames, runs 3-layer detection, returns results.
+    """
+    await websocket.accept()
+    print("📹 WebSocket client connected")
+    
+    frame_count = 0
+    start_time = time.time()
+    
+    try:
+        while True:
+            # Receive frame data
+            data = await websocket.receive_text()
+            msg = None
+            try:
+                import json
+                msg = json.loads(data)
+            except:
+                continue
+            
+            if msg.get("type") != "frame" or not msg.get("data"):
+                continue
+            
+            frame_start = time.time()
+            
+            # Decode base64 image
+            try:
+                # Remove data URL prefix if present
+                img_data = msg["data"]
+                if "," in img_data:
+                    img_data = img_data.split(",")[1]
+                
+                img_bytes = base64.b64decode(img_data)
+                pil_image = Image.open(io.BytesIO(img_bytes)).convert("RGB")
+            except Exception as e:
+                print(f"❌ Failed to decode frame: {e}")
+                continue
+            
+            # Run YOLO detection (speed model for real-time)
+            results = model_speed(pil_image, conf=0.3, verbose=False)
+            
+            # Process detections
+            detections = []
+            for r in results[0].boxes:
+                bbox = r.xyxy[0].tolist()
+                conf = float(r.conf[0])
+                cls = int(r.cls[0])
+                detections.append({
+                    "bbox": bbox,
+                    "confidence": conf,
+                    "class": results[0].names[cls]
+                })
+            
+            # Calculate FPS
+            frame_count += 1
+            elapsed = time.time() - start_time
+            fps = frame_count / max(elapsed, 0.001)
+            
+            latency = (time.time() - frame_start) * 1000
+            
+            # Check for falcon trigger (low confidence)
+            falcon_trigger = any(d["confidence"] < 0.5 for d in detections)
+            
+            # Send response
+            import json
+            response = {
+                "type": "detection",
+                "detections": detections,
+                "latency_ms": round(latency, 2),
+                "fps": round(fps, 1),
+                "falcon_trigger": falcon_trigger
+            }
+            await websocket.send_text(json.dumps(response))
+            
+    except WebSocketDisconnect:
+        print("📹 WebSocket client disconnected")
+    except Exception as e:
+        print(f"❌ WebSocket error: {e}")
 
 
 if __name__ == "__main__":
