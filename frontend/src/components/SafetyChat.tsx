@@ -37,7 +37,7 @@ interface SafetyChatProps {
   onImageRequest?: () => void;
 }
 
-const SafetyChat = ({ currentImage, onImageRequest }: SafetyChatProps) => {
+const SafetyChat = ({ currentImage }: SafetyChatProps) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -533,8 +533,7 @@ const SafetyChat = ({ currentImage, onImageRequest }: SafetyChatProps) => {
                 height: '16px', 
                 color: '#4B5563',
                 cursor: 'help',
-              }} 
-              title="Ask questions about safety equipment, hazards, or request a status report"
+              }}
             />
           </div>
           

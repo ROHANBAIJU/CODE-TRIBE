@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Layers, Zap, Target } from 'lucide-react';
 

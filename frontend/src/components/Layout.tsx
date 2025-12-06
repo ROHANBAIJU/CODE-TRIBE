@@ -8,7 +8,8 @@ import {
   Map,
   Shield
 } from 'lucide-react';
-import { ReactNode, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
+import type { ReactNode } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { healthCheck } from '../services/api';
 
@@ -19,7 +20,6 @@ interface LayoutProps {
 const Layout = ({ children }: LayoutProps) => {
   const location = useLocation();
   const [systemStatus, setSystemStatus] = useState<'nominal' | 'degraded' | 'offline'>('offline');
-  const [isRecording, setIsRecording] = useState(true);
 
   useEffect(() => {
     const checkHealth = async () => {
@@ -91,12 +91,8 @@ const Layout = ({ children }: LayoutProps) => {
                 animate={{ opacity: [1, 0.5, 1] }}
                 transition={{ duration: 2, repeat: Infinity }}
               >
-                {isRecording && (
-                  <>
-                    <Circle style={{ width: '12px', height: '12px', fill: '#ef4444', color: '#ef4444' }} />
-                    <span className="font-mono" style={{ fontSize: '0.875rem' }}>REC</span>
-                  </>
-                )}
+                <Circle style={{ width: '12px', height: '12px', fill: '#ef4444', color: '#ef4444' }} />
+                <span className="font-mono" style={{ fontSize: '0.875rem' }}>REC</span>
               </motion.div>
 
               {/* System Status */}
