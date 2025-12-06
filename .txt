@@ -1,0 +1,8 @@
+GROQ_API_KEY=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
+
+# Falcon-Link External APIs (add your keys here)
+FALCON_API_KEY=your_falcon_api_key_here
+HUGGINGFACE_API_KEY=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
+REPLICATE_API_KEY=your_replicate_api_key_here
+STABILITY_API_KEY=your_stability_ai_key_here
+
