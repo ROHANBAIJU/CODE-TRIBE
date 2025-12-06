@@ -4,7 +4,7 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 30000,
+  timeout: 60000,  // Increased to 60 seconds for healing with training images
   headers: {
     'Content-Type': 'application/json',
   },
@@ -279,10 +279,18 @@ export interface EdgeCase {
   synthetic_images: number;
 }
 
+export interface TrainingImagePreview {
+  filename: string;
+  augmentation_type: string;
+  image_base64: string;
+}
+
 export interface HealingResult {
   status: string;
   object_class: string;
   synthetic_images_generated: number;
+  augmented_training_images?: number;
+  training_images_preview?: TrainingImagePreview[];
   improvement_estimate: string;
   stages: {
     name: string;
