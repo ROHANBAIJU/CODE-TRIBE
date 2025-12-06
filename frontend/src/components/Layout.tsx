@@ -1,6 +1,8 @@
 import { motion } from 'framer-motion';
 import {
   Activity,
+  ChevronLeft,
+  ChevronRight,
   Circle,
   Flame,
   Globe,
@@ -20,6 +22,7 @@ interface LayoutProps {
 const Layout = ({ children }: LayoutProps) => {
   const location = useLocation();
   const [systemStatus, setSystemStatus] = useState<'nominal' | 'degraded' | 'offline'>('offline');
+  const [sidebarExpanded, setSidebarExpanded] = useState(false);
 
   useEffect(() => {
     const checkHealth = async () => {
@@ -39,7 +42,6 @@ const Layout = ({ children }: LayoutProps) => {
   const navItems = [
     { path: '/dashboard', icon: Activity, label: 'Dashboard' },
     { path: '/fusion', icon: Layers, label: 'Fusion' },
-    { path: '/falcon', icon: Flame, label: 'Falcon' },
     { path: '/map', icon: Map, label: 'Station Map' },
     { path: '/snet', icon: Globe, label: 'SingularityNET' },
   ];
@@ -115,15 +117,45 @@ const Layout = ({ children }: LayoutProps) => {
       <div style={{ display: 'flex', flex: 1 }}>
         {/* Sidebar Navigation */}
         <nav className="glass-panel" style={{ 
-          width: '80px',
-          borderRight: '1px solid rgba(33, 150, 243, 0.3)'
+          width: sidebarExpanded ? '240px' : '80px',
+          borderRight: '1px solid rgba(33, 150, 243, 0.3)',
+          transition: 'width 0.3s ease',
+          position: 'relative'
         }}>
+          {/* Toggle Button */}
+          <button
+            onClick={() => setSidebarExpanded(!sidebarExpanded)}
+            style={{
+              position: 'absolute',
+              right: '-12px',
+              top: '20px',
+              width: '24px',
+              height: '24px',
+              borderRadius: '50%',
+              backgroundColor: 'rgba(33, 150, 243, 0.3)',
+              border: '1px solid rgba(33, 150, 243, 0.5)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              zIndex: 10,
+              color: '#2196F3',
+              transition: 'all 0.3s'
+            }}
+            className="hover:bg-blue-500/30"
+          >
+            {sidebarExpanded ? 
+              <ChevronLeft style={{ width: '16px', height: '16px' }} /> : 
+              <ChevronRight style={{ width: '16px', height: '16px' }} />
+            }
+          </button>
+
           <div style={{ 
             display: 'flex', 
             flexDirection: 'column', 
-            alignItems: 'center', 
-            padding: '2rem 0',
-            gap: '2rem'
+            alignItems: sidebarExpanded ? 'stretch' : 'center', 
+            padding: '2rem 1rem',
+            gap: '1rem'
           }}>
             {navItems.map((item) => {
               const Icon = item.icon;
@@ -139,21 +171,35 @@ const Layout = ({ children }: LayoutProps) => {
                   }}
                 >
                   <motion.div
-                    whileHover={{ scale: 1.1 }}
+                    whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                     style={{
                       padding: '0.75rem',
                       borderRadius: '0.5rem',
                       backgroundColor: isActive ? 'rgba(33, 150, 243, 0.2)' : 'transparent',
                       color: isActive ? '#2196F3' : '#9ca3af',
-                      transition: 'all 0.3s'
+                      transition: 'all 0.3s',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.75rem',
+                      justifyContent: sidebarExpanded ? 'flex-start' : 'center'
                     }}
                   >
-                    <Icon style={{ width: '24px', height: '24px' }} />
+                    <Icon style={{ width: '24px', height: '24px', flexShrink: 0 }} />
+                    {sidebarExpanded && (
+                      <span className="font-mono" style={{ 
+                        fontSize: '0.875rem',
+                        whiteSpace: 'nowrap',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis'
+                      }}>
+                        {item.label}
+                      </span>
+                    )}
                   </motion.div>
                   
                   {/* Active Indicator */}
-                  {isActive && (
+                  {isActive && !sidebarExpanded && (
                     <motion.div
                       layoutId="activeTab"
                       style={{
