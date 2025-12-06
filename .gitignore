@@ -120,6 +120,9 @@ htmlcov/
 .env
 .env.local
 .env.*.local
+.env.production
+.env.development
+# Keep .env.example for template
 
 # Logs
 # ============================================

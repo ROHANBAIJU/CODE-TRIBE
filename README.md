@@ -157,7 +157,9 @@ npm run dev
 **Backend:** Deploy to [Render.com](https://render.com) (Free tier available)  
 **Frontend:** Deploy to [Vercel](https://vercel.com) (Free tier available)
 
-📖 **See [DEPLOYMENT.md](DEPLOYMENT.md) for complete deployment guide**
+📖 **Deployment Guides:**
+- **Backend (Render):** [DEPLOYMENT.md](DEPLOYMENT.md)
+- **Frontend (Vercel):** [DEPLOYMENT_FRONTEND.md](DEPLOYMENT_FRONTEND.md)
 
 ---
 
@@ -232,7 +234,8 @@ npm run dev
 ## 📚 Documentation
 
 For comprehensive information, see:
-- **[DEPLOYMENT.md](DEPLOYMENT.md)** - Complete deployment guide for Render & Vercel
+- **[DEPLOYMENT.md](DEPLOYMENT.md)** - Backend deployment guide for Render
+- **[DEPLOYMENT_FRONTEND.md](DEPLOYMENT_FRONTEND.md)** - Frontend deployment guide for Vercel
 - **[QUICKSTART.md](QUICKSTART.md)** - Get started in under 5 minutes
 - **[PRESENTATION.md](PRESENTATION.md)** - Hackathon presentation script
 - **[QUESTIONS.md](DOCUMENTS-IMPORTANT/QUESTIONS.md)** - Judge Q&A preparation
