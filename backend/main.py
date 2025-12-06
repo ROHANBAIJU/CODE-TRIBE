@@ -22,7 +22,7 @@ from typing import List, Optional
 load_dotenv()
 
 # Get CORS origins from environment variable
-CORS_ORIGINS = os.getenv("CORS_ORIGINS", "http://localhost:5173,http://localhost:3000").split(",")
+CORS_ORIGINS = os.getenv("CORS_ORIGINS", "http://localhost:5173,http://localhost:3000,https://code-tribe.vercel.app").split(",")
 
 # Try to import motor for MongoDB (optional)
 try:
