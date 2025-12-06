@@ -213,6 +213,14 @@ npm run dev
 
 ---
 
+## 📚 Documentation
+
+For comprehensive information, see:
+- **[QUESTIONS.md](DOCUMENTS-IMPORTANT/QUESTIONS.md)** - Judge Q&A preparation, competitor analysis, and strategic positioning
+- **[COMPETITOR_ANALYSIS.md](DOCUMENTS-IMPORTANT/COMPETITOR_ANALYSIS.md)** - Detailed market comparison
+
+---
+
 ## 📁 Project Structure
 
 ```
@@ -237,6 +245,9 @@ CODE-TRIBE/
 │   │   └── pages/
 │   │       └── Dashboard.tsx
 │   └── package.json
+├── DOCUMENTS-IMPORTANT/
+│   ├── QUESTIONS.md              # Judge Q&A & competitor analysis
+│   └── COMPETITOR_ANALYSIS.md    # Market comparison
 ├── docker-compose.yml
 ├── Dockerfile.backend
 ├── Dockerfile.frontend
