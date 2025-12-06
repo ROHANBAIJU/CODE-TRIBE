@@ -13,6 +13,7 @@ from core.fusion_enhanced import FusionEnhanced  # Updated import
 from core.rnn_temporal import RNNTemporal  # New import
 from core.vlm_chat import get_vlm_chat, VLMProvider  # VLM Chat - The Brain
 from core.singularitynet import get_snet, init_snet  # SingularityNET integration
+from core.falcon_image_gen import FalconImageGenerator  # Real image generation with HF
 from typing import List, Optional
 
 # Load environment variables
@@ -107,6 +108,13 @@ else:
 
 fusion_model = FusionEnhanced(yolo_weight=0.6, rnn_weight=0.4, iou_threshold=0.5)
 print(f"🔗 Fusion Enhanced initialized")
+
+# Initialize Falcon Image Generator with Hugging Face
+falcon_generator = FalconImageGenerator(api_key=HUGGINGFACE_API_KEY)
+if falcon_generator.api_key:
+    print(f"🦅 Falcon Image Generator initialized with Hugging Face API")
+else:
+    print(f"⚠️  Falcon Image Generator running in simulated mode (no API key)")
 
 # --- DATA MODELS ---
 class LogRequest(BaseModel):
@@ -748,6 +756,55 @@ async def falcon_api_status():
             "configured": bool(STABILITY_API_KEY and STABILITY_API_KEY != "your_stability_ai_key_here"),
             "key_preview": f"{STABILITY_API_KEY[:10]}..." if STABILITY_API_KEY and STABILITY_API_KEY != "your_stability_ai_key_here" else None
         }
+    }
+
+
+@app.post("/falcon/generate-real-images")
+async def generate_real_synthetic_images(request: SyntheticGenerateRequest):
+    """
+    Generate REAL synthetic images using Hugging Face Stable Diffusion XL
+    Uses the falcon_image_gen module for actual AI image generation
+    """
+    object_class = request.object_class
+    count = min(request.count, 10)  # Limit to 10 for API rate limiting
+    
+    # Use the global falcon_generator initialized at startup
+    # Generate images
+    variations = ["low_light", "high_glare", "partial_occlusion", "motion_blur", "fog", "rain"]
+    results = await falcon_generator.generate_batch(object_class, count, variations)
+    
+    # Store in MongoDB
+    generated_images = []
+    for i, result in enumerate(results):
+        synthetic_image = {
+            "object_class": object_class,
+            "variation": result.get("variation", "normal"),
+            "generated_at": datetime.utcnow(),
+            "image_id": f"syn_{object_class}_{i}_{int(time.time())}",
+            "quality_score": result.get("quality_score", 0.9),
+            "model_used": result.get("model", "stable-diffusion-xl"),
+            "prompt": result.get("prompt", ""),
+            "api_generated": result.get("api_used", False),
+            "image_data": result.get("image_data"),  # Base64 image if API used
+            "augmentation_params": result.get("augmentation_params", {})
+        }
+        
+        if synthetic_images_collection is not None:
+            result_db = await synthetic_images_collection.insert_one(synthetic_image)
+            synthetic_image["_id"] = str(result_db.inserted_id)
+        else:
+            synthetic_image["_id"] = f"local_{len(_synthetic_images) + i}"
+            _synthetic_images.append(synthetic_image)
+        
+        generated_images.append(synthetic_image)
+    
+    return {
+        "status": "success",
+        "object_class": object_class,
+        "images_generated": len(generated_images),
+        "api_used": results[0].get("api_used", False) if results else False,
+        "model": results[0].get("model", "simulated") if results else "simulated",
+        "images": generated_images
     }
 
 
