@@ -227,4 +227,135 @@ export const getSNetEarnings = async (): Promise<SNetEarnings> => {
   return response.data;
 };
 
+
+// ============================================
+// FALCON-LINK API FUNCTIONS 🦅
+// ============================================
+
+export interface FalconStatus {
+  status: string;
+  total_triggers: number;
+  synthetic_images_generated: number;
+  avg_improvement: number;
+  cases_resolved: number;
+  total_cases: number;
+  recent_triggers: FalconTrigger[];
+  is_generating: boolean;
+}
+
+export interface FalconTrigger {
+  _id: string;
+  object_class: string;
+  confidence: number;
+  reason: string;
+  timestamp: string;
+  status: string;
+}
+
+export interface SyntheticImage {
+  _id: string;
+  object_class: string;
+  variation: string;
+  generated_at: string;
+  image_id: string;
+  quality_score: number;
+  augmentation_params: {
+    brightness: number;
+    contrast: number;
+    rotation: number;
+    noise_level: number;
+  };
+}
+
+export interface EdgeCase {
+  _id: string;
+  scenario: string;
+  object_class: string;
+  description: string;
+  triggers: number;
+  improvement: number;
+  status: string;
+  created_at: string;
+  synthetic_images: number;
+}
+
+export interface HealingResult {
+  status: string;
+  object_class: string;
+  synthetic_images_generated: number;
+  improvement_estimate: string;
+  stages: {
+    name: string;
+    status: string;
+    duration_ms: number;
+    images?: number;
+  }[];
+}
+
+export const getFalconStatus = async (): Promise<FalconStatus> => {
+  const response = await apiClient.get('/falcon/status');
+  return response.data;
+};
+
+export const triggerFalcon = async (objectClass: string, confidence: number, reason: string = 'low_confidence'): Promise<any> => {
+  const response = await apiClient.post('/falcon/trigger', {
+    object_class: objectClass,
+    confidence,
+    reason
+  });
+  return response.data;
+};
+
+export const getFalconTriggers = async (): Promise<{ triggers: FalconTrigger[] }> => {
+  const response = await apiClient.get('/falcon/triggers');
+  return response.data;
+};
+
+export const generateSyntheticImages = async (
+  objectClass: string,
+  count: number = 25,
+  variationType: string = 'random'
+): Promise<{ status: string; object_class: string; images_generated: number; images: SyntheticImage[] }> => {
+  const response = await apiClient.post('/falcon/generate-synthetic', {
+    object_class: objectClass,
+    count,
+    variation_type: variationType
+  });
+  return response.data;
+};
+
+export const getSyntheticImages = async (): Promise<{ images: SyntheticImage[]; total: number }> => {
+  const response = await apiClient.get('/falcon/synthetic-images');
+  return response.data;
+};
+
+export const addEdgeCase = async (scenario: string, objectClass: string, description: string): Promise<{ status: string; edge_case: EdgeCase }> => {
+  const response = await apiClient.post('/falcon/edge-case', {
+    scenario,
+    object_class: objectClass,
+    description
+  });
+  return response.data;
+};
+
+export const getEdgeCases = async (): Promise<{ edge_cases: EdgeCase[] }> => {
+  const response = await apiClient.get('/falcon/edge-cases');
+  return response.data;
+};
+
+export const resolveEdgeCase = async (caseId: string, improvement: number): Promise<{ status: string; case_id: string; improvement: number }> => {
+  const response = await apiClient.post(`/falcon/resolve-case/${caseId}`, {
+    improvement
+  });
+  return response.data;
+};
+
+export const runHealingPipeline = async (objectClass: string): Promise<HealingResult> => {
+  const response = await apiClient.post('/falcon/run-healing', {
+    object_class: objectClass
+  });
+  return response.data;
+};
+
+
 export default apiClient;

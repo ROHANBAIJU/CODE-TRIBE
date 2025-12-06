@@ -6,6 +6,13 @@ Supports: Groq API (Llama Vision), Ollama (local), Mock (demo)
 """
 
 import os
+from pathlib import Path
+
+# Load .env file from project root
+from dotenv import load_dotenv
+env_path = Path(__file__).parent.parent.parent / ".env"
+load_dotenv(env_path)
+
 import base64
 import httpx
 from typing import Optional, Dict, List
@@ -42,27 +49,27 @@ class VLMChat:
         self.groq_api_key = os.getenv("GROQ_API_KEY", "")
         self.ollama_url = os.getenv("OLLAMA_URL", "http://localhost:11434")
         
-        # System prompt for safety analysis
-        self.system_prompt = """You are SafetyGuard AI, an expert industrial safety monitoring agent.
-Your role is to analyze images of industrial environments and assess safety equipment status.
+        # System prompt for safety analysis - conversational but expert
+        self.system_prompt = """You are SafetyGuard AI, a friendly and intelligent industrial safety assistant.
 
-You MUST:
-1. Identify all safety equipment visible (fire extinguishers, oxygen tanks, helmets, first aid boxes, emergency phones, fire alarms, safety switch panels)
-2. Assess if each piece of equipment is:
-   - Visible and accessible
-   - Potentially obstructed
-   - Missing from expected location
-3. Provide a clear safety assessment
-4. Give actionable recommendations
+IMPORTANT: You are a conversational AI assistant first! Respond naturally to greetings and casual messages.
+- If someone says "hi", "hello", or greets you → Respond warmly and introduce yourself briefly
+- If someone asks general questions → Answer helpfully like a friendly AI assistant
+- If someone asks about safety, equipment, or shares an image → Then provide safety analysis
 
-Respond in a helpful, professional manner. Be specific about locations and issues.
-If you detect potential safety hazards, clearly state them with urgency level.
+When analyzing images or discussing safety:
+1. Identify safety equipment (fire extinguishers, oxygen tanks, helmets, first aid boxes, emergency phones, fire alarms, safety switch panels, nitrogen tanks)
+2. Assess equipment status and accessibility
+3. Provide clear, helpful recommendations
 
-Format your response clearly with:
-- SAFETY STATUS: SAFE / WARNING / CRITICAL
-- EQUIPMENT FOUND: List of detected items
-- ISSUES: Any problems detected
-- RECOMMENDATIONS: What actions to take
+Your personality:
+- Friendly and approachable
+- Professional but not robotic
+- Helpful and proactive
+- Expert in industrial safety
+
+Only provide formal safety reports when specifically analyzing images or when asked about safety status.
+For casual conversation, be natural and engaging!
 """
         
         print(f"🧠 VLM Chat initialized with provider: {provider.value}")
@@ -105,22 +112,21 @@ Format your response clearly with:
             return await self._query_mock(image_bytes, full_query, detections)
     
     async def _query_groq(self, image_bytes: bytes, query: str) -> SafetyAnalysis:
-        """Query Groq API with Llama Vision"""
+        """Query Groq API with Llama - uses text model with detection context"""
         
         if not self.groq_api_key:
             print("⚠️ No Groq API key found, falling back to mock")
             return await self._query_mock(image_bytes, query, None)
-        
-        # Encode image to base64
-        image_b64 = base64.b64encode(image_bytes).decode('utf-8')
         
         headers = {
             "Authorization": f"Bearer {self.groq_api_key}",
             "Content-Type": "application/json"
         }
         
+        # Use text-only model (llama-3.3-70b-versatile) since vision models not available on free tier
+        # Detection context is already included in the query from analyze_safety()
         payload = {
-            "model": "llama-3.2-90b-vision-preview",
+            "model": "llama-3.3-70b-versatile",
             "messages": [
                 {
                     "role": "system",
@@ -128,22 +134,11 @@ Format your response clearly with:
                 },
                 {
                     "role": "user",
-                    "content": [
-                        {
-                            "type": "text",
-                            "text": query
-                        },
-                        {
-                            "type": "image_url",
-                            "image_url": {
-                                "url": f"data:image/jpeg;base64,{image_b64}"
-                            }
-                        }
-                    ]
+                    "content": query
                 }
             ],
             "max_tokens": 1024,
-            "temperature": 0.3
+            "temperature": 0.7
         }
         
         try:
@@ -157,6 +152,7 @@ Format your response clearly with:
                 
                 result = response.json()
                 content = result["choices"][0]["message"]["content"]
+                print(f"✅ Groq response received: {content[:100]}...")
                 
                 return self._parse_response(content)
                 
@@ -323,6 +319,66 @@ Format your response clearly with:
             raw_response=content
         )
     
+    async def chat(self, query: str, detections: Optional[List[Dict]] = None) -> str:
+        """
+        Conversational chat - sends user query to Groq AI.
+        Includes detection context if available.
+        """
+        # Build context from detections if available
+        context = ""
+        if detections:
+            context = "\n\n[Current detection context - equipment visible in the scene:]"
+            for det in detections:
+                label = det.get('label', det.get('class', 'Unknown'))
+                conf = det.get('score', det.get('confidence', 0))
+                context += f"\n- {label}: {conf:.1%} confidence"
+        
+        full_query = query + context
+        
+        if self.provider == VLMProvider.GROQ and self.groq_api_key:
+            try:
+                headers = {
+                    "Authorization": f"Bearer {self.groq_api_key}",
+                    "Content-Type": "application/json"
+                }
+                
+                payload = {
+                    "model": "llama-3.3-70b-versatile",
+                    "messages": [
+                        {"role": "system", "content": self.system_prompt},
+                        {"role": "user", "content": full_query}
+                    ],
+                    "max_tokens": 512,
+                    "temperature": 0.7
+                }
+                
+                async with httpx.AsyncClient(timeout=30.0) as client:
+                    response = await client.post(
+                        "https://api.groq.com/openai/v1/chat/completions",
+                        headers=headers,
+                        json=payload
+                    )
+                    response.raise_for_status()
+                    result = response.json()
+                    content = result["choices"][0]["message"]["content"]
+                    print(f"✅ Groq chat response: {content[:80]}...")
+                    return content
+            except Exception as e:
+                print(f"❌ Groq chat error: {e}")
+                # Fall through to default response
+        
+        # Fallback response for greetings
+        query_lower = query.lower().strip()
+        if any(greet in query_lower for greet in ['hi', 'hello', 'hey', 'good morning', 'good afternoon', 'good evening']):
+            return "Hello! 👋 I'm SafetyGuard AI, your industrial safety monitoring assistant. I can help you analyze safety equipment, check area safety status, and answer questions about industrial safety protocols. How can I assist you today?"
+        
+        # Fallback for other queries
+        if detections:
+            equipment = [d.get('label', d.get('class', 'Unknown')) for d in detections]
+            return f"I can see {len(detections)} safety equipment items: {', '.join(equipment)}. Feel free to ask me anything about safety!"
+        
+        return "I'm here to help with industrial safety! Upload an image and I can analyze the safety equipment in your environment, or ask me any safety-related questions."
+
     async def quick_check(self, detections: List[Dict]) -> str:
         """Quick safety check without image - just analyze detections"""
         

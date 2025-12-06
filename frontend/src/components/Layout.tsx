@@ -1,15 +1,15 @@
-import { ReactNode, useState, useEffect } from 'react';
-import { Link, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { 
-  Shield, 
-  Layers, 
-  Flame, 
-  Map, 
+import {
   Activity,
   Circle,
-  Globe
+  Flame,
+  Globe,
+  Layers,
+  Map,
+  Shield
 } from 'lucide-react';
+import { ReactNode, useEffect, useState } from 'react';
+import { Link, useLocation } from 'react-router-dom';
 import { healthCheck } from '../services/api';
 
 interface LayoutProps {
@@ -41,6 +41,7 @@ const Layout = ({ children }: LayoutProps) => {
     { path: '/fusion', icon: Layers, label: 'Fusion' },
     { path: '/falcon', icon: Flame, label: 'Falcon' },
     { path: '/map', icon: Map, label: 'Station Map' },
+    { path: '/snet', icon: Globe, label: 'SingularityNET' },
   ];
 
   const statusColors = {

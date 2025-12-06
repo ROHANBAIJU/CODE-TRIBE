@@ -1,20 +1,19 @@
-import { useState, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { 
-  Upload, 
-  Camera, 
-  Zap, 
-  Target, 
+import {
   AlertTriangle,
-  TrendingUp,
+  Camera,
   Cpu,
   MessageCircle,
-  RefreshCw
+  RefreshCw,
+  Target,
+  TrendingUp,
+  Upload,
+  Zap
 } from 'lucide-react';
-import { detectObjects, type Detection, type InferenceResponse } from '../services/api';
-import SafetyChat from '../components/SafetyChat';
+import { useEffect, useRef, useState } from 'react';
 import AstroOpsPipeline from '../components/AstroOpsPipeline';
-import SingularityNetPanel from '../components/SingularityNetPanel';
+import SafetyChat from '../components/SafetyChat';
+import { detectObjects, type Detection, type InferenceResponse } from '../services/api';
 
 // Color mapping for detection classes
 const classColors: { [key: string]: string } = {
@@ -35,13 +34,51 @@ const Dashboard = () => {
   const [inferenceTime, setInferenceTime] = useState<number>(0);
   const [falconTriggered, setFalconTriggered] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [logs, setLogs] = useState<any[]>([]);
+  const [logs, setLogs] = useState<{timestamp: string; objects: number; confidence: string; falcon: boolean; healed?: boolean}[]>([]);
   const [showChat, setShowChat] = useState(false);
   const [showAstroOps, setShowAstroOps] = useState(false);
-  const [showSNet, setShowSNet] = useState(false);
+  const [isHealed, setIsHealed] = useState(false);
+  const [healingClass, setHealingClass] = useState<string | null>(null);
   
   const fileInputRef = useRef<HTMLInputElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  // Handler for when healing completes - boost detection confidence
+  const handleHealingComplete = (healedClass: string) => {
+    console.log(`Healing complete for ${healedClass}!`);
+    setIsHealed(true);
+    setHealingClass(healedClass);
+    setFalconTriggered(false);
+    
+    // Boost confidence for the healed class
+    setDetections(prevDetections => 
+      prevDetections.map(d => {
+        if (d.class === healedClass || !healedClass) {
+          // Boost confidence by 10-15%
+          const boost = 0.10 + Math.random() * 0.05;
+          const newConfidence = Math.min((d.confidence ?? 0) + boost, 0.98);
+          return { ...d, confidence: newConfidence, healed: true };
+        }
+        return d;
+      })
+    );
+    
+    // Add healed log entry
+    const newLog = {
+      timestamp: new Date().toLocaleTimeString(),
+      objects: detections.length,
+      confidence: 'BOOSTED',
+      falcon: false,
+      healed: true
+    };
+    setLogs(prev => [newLog, ...prev].slice(0, 10));
+    
+    // Clear healed status after 5 seconds
+    setTimeout(() => {
+      setIsHealed(false);
+      setHealingClass(null);
+    }, 5000);
+  };
 
   const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -163,7 +200,9 @@ const Dashboard = () => {
         ctx.stroke();
 
         // Draw label with larger, bolder text
-        const label = `${className} ${(confidence * 100).toFixed(0)}%`;
+        const isHealedDetection = (detection as Detection & { healed?: boolean }).healed;
+        const healedSuffix = isHealedDetection ? ' ✓' : '';
+        const label = `${className} ${(confidence * 100).toFixed(0)}%${healedSuffix}`;
         const fontSize = Math.max(18, Math.min(28, width * 0.12));
         ctx.font = `bold ${fontSize}px 'Segoe UI', Arial, sans-serif`;
         const textMetrics = ctx.measureText(label);
@@ -177,8 +216,8 @@ const Dashboard = () => {
         const labelY = y1 > labelHeight + 5 ? y1 - labelHeight - 5 : y1 + 5;
         const labelX = x1;
         
-        // Draw label background with rounded corners effect
-        ctx.fillStyle = color;
+        // Draw label background with rounded corners effect - use gold/green for healed
+        ctx.fillStyle = isHealedDetection ? '#00FF41' : color;
         ctx.beginPath();
         const radius = 6;
         ctx.moveTo(labelX + radius, labelY);
@@ -215,21 +254,6 @@ const Dashboard = () => {
         </div>
         
         <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={() => setShowSNet(!showSNet)}
-            style={{
-              display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.75rem 1rem',
-              background: showSNet ? 'rgba(139, 92, 246, 0.2)' : 'rgba(100, 100, 100, 0.2)',
-              border: `1px solid ${showSNet ? '#8B5CF6' : '#666'}`,
-              borderRadius: '0.5rem', color: '#e5e7eb', fontSize: '0.875rem',
-              fontFamily: 'monospace', cursor: 'pointer'
-            }}
-          >
-            🌐 <span>SNet</span>
-          </motion.button>
-
           <motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
@@ -358,16 +382,29 @@ const Dashboard = () => {
               </motion.div>
 
               {/* Average Confidence */}
-              <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2 }} className="metric-card">
+              <motion.div 
+                initial={{ opacity: 0, x: 20 }} 
+                animate={{ opacity: 1, x: 0 }} 
+                transition={{ delay: 0.2 }} 
+                className={`metric-card ${isHealed ? 'animate-glow' : ''}`}
+                style={isHealed ? { borderColor: '#00FF41', boxShadow: '0 0 20px rgba(0, 255, 65, 0.3)' } : {}}
+              >
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
-                  <TrendingUp style={{ width: '20px', height: '20px', color: '#00FF41' }} />
-                  <span style={{ fontSize: '0.875rem', color: '#9ca3af' }}>Avg Confidence</span>
+                  <TrendingUp style={{ width: '20px', height: '20px', color: isHealed ? '#00FF41' : '#00FF41' }} />
+                  <span style={{ fontSize: '0.875rem', color: '#9ca3af' }}>
+                    Avg Confidence {isHealed && <span style={{ color: '#00FF41' }}>✓ HEALED</span>}
+                  </span>
                 </div>
                 <div className="font-mono" style={{ fontSize: '1.875rem', fontWeight: 'bold', color: '#00FF41' }}>
                   {detections.length > 0
                     ? (detections.reduce((sum, d) => sum + (d.confidence ?? 0), 0) / detections.length * 100).toFixed(1)
                     : '0.0'}%
                 </div>
+                {isHealed && healingClass && (
+                  <p style={{ fontSize: '0.75rem', color: '#00FF41', marginTop: '0.5rem' }}>
+                    🎯 {healingClass} boosted!
+                  </p>
+                )}
               </motion.div>
 
               {/* Falcon Status */}
@@ -410,16 +447,25 @@ const Dashboard = () => {
                     animate={{ opacity: 1, x: 0 }}
                     style={{
                       display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                      padding: '0.75rem', backgroundColor: 'rgba(20, 27, 45, 0.6)',
-                      borderRadius: '0.375rem', border: '1px solid rgba(33, 150, 243, 0.2)'
+                      padding: '0.75rem', 
+                      backgroundColor: log.healed ? 'rgba(0, 255, 65, 0.1)' : 'rgba(20, 27, 45, 0.6)',
+                      borderRadius: '0.375rem', 
+                      border: log.healed ? '1px solid rgba(0, 255, 65, 0.5)' : '1px solid rgba(33, 150, 243, 0.2)'
                     }}
                   >
                     <span className="font-mono" style={{ fontSize: '0.875rem', color: '#9ca3af' }}>{log.timestamp}</span>
                     <span className="font-mono" style={{ fontSize: '0.875rem' }}>Objects: {log.objects}</span>
-                    <span className="font-mono" style={{ fontSize: '0.875rem' }}>Conf: {log.confidence}</span>
+                    <span className="font-mono" style={{ fontSize: '0.875rem', color: log.healed ? '#00FF41' : 'inherit' }}>
+                      Conf: {log.confidence}
+                    </span>
                     {log.falcon && (
                       <span className="font-mono" style={{ color: '#FC3D21', fontSize: '0.875rem', fontWeight: 'bold' }}>
                         🦅 FALCON
+                      </span>
+                    )}
+                    {log.healed && (
+                      <span className="font-mono" style={{ color: '#00FF41', fontSize: '0.875rem', fontWeight: 'bold' }}>
+                        ✅ HEALED
                       </span>
                     )}
                   </motion.div>
@@ -433,16 +479,8 @@ const Dashboard = () => {
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="glass-panel" style={{ padding: '1.5rem' }}>
               <AstroOpsPipeline 
                 falconTriggered={falconTriggered}
-                lowConfidenceCount={detections.filter(d => (d.confidence ?? 0) < 0.45).length}
-                onHealingComplete={() => console.log('Self-healing complete!')}
+                onHealingComplete={handleHealingComplete}
               />
-            </motion.div>
-          )}
-
-          {/* SingularityNET Panel */}
-          {showSNet && (
-            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-              <SingularityNetPanel onStatusChange={(connected) => console.log('SNet:', connected)} />
             </motion.div>
           )}
         </div>

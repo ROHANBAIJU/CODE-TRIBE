@@ -1,8 +1,9 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { Navigate, Route, BrowserRouter as Router, Routes } from 'react-router-dom';
 import Layout from './components/Layout';
 import Dashboard from './pages/Dashboard';
-import FusionVisualizer from './pages/FusionVisualizer';
 import FalconMonitor from './pages/FalconMonitor';
+import FusionVisualizer from './pages/FusionVisualizer';
+import SingularityNet from './pages/SingularityNet';
 import StationMap from './pages/StationMap';
 
 function App() {
@@ -15,6 +16,7 @@ function App() {
           <Route path="/fusion" element={<FusionVisualizer />} />
           <Route path="/falcon" element={<FalconMonitor />} />
           <Route path="/map" element={<StationMap />} />
+          <Route path="/snet" element={<SingularityNet />} />
         </Routes>
       </Layout>
     </Router>
