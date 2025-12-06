@@ -54,7 +54,7 @@ Render will auto-detect settings from `render.yaml`, but verify:
 | **Branch** | `main` |
 | **Runtime** | `Python 3` |
 | **Build Command** | `pip install --upgrade pip && pip install -r requirements.txt` |
-| **Start Command** | `uvicorn backend.main:app --host 0.0.0.0 --port $PORT` |
+| **Start Command** | `cd backend && uvicorn main:app --host 0.0.0.0 --port $PORT` |
 | **Plan** | **Free** |
 
 ### 2.3 Set Environment Variables
@@ -66,6 +66,7 @@ Click **"Advanced"** → **"Add Environment Variable"**
 ```bash
 # Python Configuration
 PYTHON_VERSION=3.10.0
+PYTHONPATH=/opt/render/project/src/backend
 
 # CORS (Important! Update with your frontend URL later)
 CORS_ORIGINS=http://localhost:5173,https://localhost:5173
