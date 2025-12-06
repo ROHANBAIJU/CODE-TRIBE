@@ -46,14 +46,16 @@ Create `vercel.json` in the **root directory** (not inside frontend):
 
 ```json
 {
-  "buildCommand": "cd frontend && npm install && npm run build",
-  "outputDirectory": "frontend/dist",
   "framework": "vite",
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist",
   "rewrites": [
     { "source": "/(.*)", "destination": "/index.html" }
   ]
 }
 ```
+
+**Important:** When you set Root Directory to `frontend` in Vercel, it already changes into that directory, so we don't need `cd frontend` in the build command.
 
 ---
 
