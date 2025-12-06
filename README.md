@@ -165,9 +165,9 @@ npm run dev
 
 ## 🌐 Live Demo
 
-- **Frontend:** `https://your-app.vercel.app` (Deploy your own!)
-- **Backend API:** `https://your-backend.onrender.com` (Deploy your own!)
-- **API Docs:** `https://your-backend.onrender.com/docs`
+- **Frontend:** `https://code-tribe.vercel.app` (Update with your Vercel URL!)
+- **Backend API:** `https://safety-guard-code-tribe.onrender.com`
+- **API Docs:** `https://safety-guard-code-tribe.onrender.com/docs`
 
 ---
 
