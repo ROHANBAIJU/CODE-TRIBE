@@ -124,11 +124,12 @@ Self-healing pipeline when confidence drops:
 ## 🚀 Quick Start
 
 ### Prerequisites
-- Docker & Docker Compose
+- Docker & Docker Compose (for local development)
+- Python 3.10+ & Node.js 18+ (for local development)
 - NVIDIA GPU (optional, for faster inference)
 - Groq API key (optional, for VLM features)
 
-### Option 1: Docker (Recommended)
+### Option 1: Docker (Recommended for Local Development)
 
 ```bash
 # Clone the repository
@@ -160,6 +161,23 @@ cd frontend
 npm install
 npm run dev
 ```
+
+### Option 3: Production Deployment
+
+**Backend:** Deploy to [Render.com](https://render.com) (Free tier available)  
+**Frontend:** Deploy to [Vercel](https://vercel.com) (Free tier available)
+
+📖 **Deployment Guides:**
+- **Backend (Render):** [DEPLOYMENT.md](DEPLOYMENT.md)
+- **Frontend (Vercel):** [DEPLOYMENT_FRONTEND.md](DEPLOYMENT_FRONTEND.md)
+
+---
+
+## 🌐 Live Demo
+
+- **Frontend:** `https://code-tribe.vercel.app` (Update with your Vercel URL!)
+- **Backend API:** `https://safety-guard-code-tribe.onrender.com`
+- **API Docs:** `https://safety-guard-code-tribe.onrender.com/docs`
 
 ---
 
@@ -333,8 +351,12 @@ curl -X POST http://localhost:8000/falcon/trigger \
 ## 📚 Documentation
 
 For comprehensive information, see:
-- **[QUESTIONS.md](DOCUMENTS-IMPORTANT/QUESTIONS.md)** - Judge Q&A preparation, competitor analysis, and strategic positioning
-- **[COMPETITOR_ANALYSIS.md](DOCUMENTS-IMPORTANT/COMPETITOR_ANALYSIS.md)** - Detailed market comparison
+- **[DEPLOYMENT.md](DEPLOYMENT.md)** - Backend deployment guide for Render
+- **[DEPLOYMENT_FRONTEND.md](DEPLOYMENT_FRONTEND.md)** - Frontend deployment guide for Vercel
+- **[QUICKSTART.md](QUICKSTART.md)** - Get started in under 5 minutes
+- **[PRESENTATION.md](PRESENTATION.md)** - Hackathon presentation script
+- **[QUESTIONS.md](DOCUMENTS-IMPORTANT/QUESTIONS.md)** - Judge Q&A preparation
+- **[COMPETITOR_ANALYSIS.md](DOCUMENTS-IMPORTANT/COMPETITOR_ANALYSIS.md)** - Market comparison
 
 ---
 

@@ -1,6 +1,8 @@
 import { motion } from 'framer-motion';
 import {
   Activity,
+  ChevronLeft,
+  ChevronRight,
   Circle,
   Flame,
   Globe,
@@ -8,7 +10,8 @@ import {
   Map,
   Shield
 } from 'lucide-react';
-import { ReactNode, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
+import type { ReactNode } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { healthCheck } from '../services/api';
 
@@ -19,7 +22,7 @@ interface LayoutProps {
 const Layout = ({ children }: LayoutProps) => {
   const location = useLocation();
   const [systemStatus, setSystemStatus] = useState<'nominal' | 'degraded' | 'offline'>('offline');
-  const [isRecording, setIsRecording] = useState(true);
+  const [sidebarExpanded, setSidebarExpanded] = useState(false);
 
   useEffect(() => {
     const checkHealth = async () => {
@@ -39,7 +42,6 @@ const Layout = ({ children }: LayoutProps) => {
   const navItems = [
     { path: '/dashboard', icon: Activity, label: 'Dashboard' },
     { path: '/fusion', icon: Layers, label: 'Fusion' },
-    { path: '/falcon', icon: Flame, label: 'Falcon' },
     { path: '/map', icon: Map, label: 'Station Map' },
     { path: '/snet', icon: Globe, label: 'SingularityNET' },
   ];
@@ -91,12 +93,8 @@ const Layout = ({ children }: LayoutProps) => {
                 animate={{ opacity: [1, 0.5, 1] }}
                 transition={{ duration: 2, repeat: Infinity }}
               >
-                {isRecording && (
-                  <>
-                    <Circle style={{ width: '12px', height: '12px', fill: '#ef4444', color: '#ef4444' }} />
-                    <span className="font-mono" style={{ fontSize: '0.875rem' }}>REC</span>
-                  </>
-                )}
+                <Circle style={{ width: '12px', height: '12px', fill: '#ef4444', color: '#ef4444' }} />
+                <span className="font-mono" style={{ fontSize: '0.875rem' }}>REC</span>
               </motion.div>
 
               {/* System Status */}
@@ -119,60 +117,97 @@ const Layout = ({ children }: LayoutProps) => {
       <div style={{ display: 'flex', flex: 1 }}>
         {/* Sidebar Navigation */}
         <nav className="glass-panel" style={{ 
-          width: '80px',
-          borderRight: '1px solid rgba(33, 150, 243, 0.3)'
+          width: sidebarExpanded ? '240px' : '80px',
+          borderRight: '1px solid rgba(33, 150, 243, 0.3)',
+          transition: 'width 0.3s ease',
+          position: 'relative'
         }}>
+          {/* Toggle Button */}
+          <button
+            onClick={() => setSidebarExpanded(!sidebarExpanded)}
+            style={{
+              position: 'absolute',
+              right: '-12px',
+              top: '20px',
+              width: '24px',
+              height: '24px',
+              borderRadius: '50%',
+              backgroundColor: 'rgba(33, 150, 243, 0.3)',
+              border: '1px solid rgba(33, 150, 243, 0.5)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              zIndex: 10,
+              color: '#2196F3',
+              transition: 'all 0.3s'
+            }}
+            className="hover:bg-blue-500/30"
+          >
+            {sidebarExpanded ? 
+              <ChevronLeft style={{ width: '16px', height: '16px' }} /> : 
+              <ChevronRight style={{ width: '16px', height: '16px' }} />
+            }
+          </button>
+
           <div style={{ 
             display: 'flex', 
             flexDirection: 'column', 
-            alignItems: 'center', 
+            alignItems: sidebarExpanded ? 'stretch' : 'center', 
             padding: '2rem 0',
-            gap: '2rem'
+            gap: '1rem'
           }}>
             {navItems.map((item) => {
               const Icon = item.icon;
               const isActive = location.pathname === item.path;
               
               return (
-                <Link
+                <div
                   key={item.path}
-                  to={item.path}
                   style={{ 
                     position: 'relative',
-                    textDecoration: 'none'
+                    width: '100%',
+                    display: 'flex',
+                    justifyContent: 'center'
                   }}
                 >
-                  <motion.div
-                    whileHover={{ scale: 1.1 }}
-                    whileTap={{ scale: 0.95 }}
-                    style={{
-                      padding: '0.75rem',
-                      borderRadius: '0.5rem',
-                      backgroundColor: isActive ? 'rgba(33, 150, 243, 0.2)' : 'transparent',
-                      color: isActive ? '#2196F3' : '#9ca3af',
-                      transition: 'all 0.3s'
+                  <Link
+                    to={item.path}
+                    style={{ 
+                      textDecoration: 'none',
+                      width: sidebarExpanded ? '100%' : 'auto'
                     }}
                   >
-                    <Icon style={{ width: '24px', height: '24px' }} />
-                  </motion.div>
-                  
-                  {/* Active Indicator */}
-                  {isActive && (
                     <motion.div
-                      layoutId="activeTab"
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
                       style={{
-                        position: 'absolute',
-                        right: '-2px',
-                        top: '50%',
-                        transform: 'translateY(-50%)',
-                        width: '4px',
-                        height: '32px',
-                        backgroundColor: '#00FF41',
-                        borderRadius: '9999px'
+                        padding: sidebarExpanded ? '0.75rem 1rem' : '0.75rem',
+                        borderRadius: '0.5rem',
+                        backgroundColor: isActive ? 'rgba(33, 150, 243, 0.2)' : 'transparent',
+                        color: isActive ? '#2196F3' : '#9ca3af',
+                        transition: 'all 0.3s',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.75rem',
+                        justifyContent: sidebarExpanded ? 'flex-start' : 'center',
+                        margin: sidebarExpanded ? '0 1rem' : '0'
                       }}
-                    />
-                  )}
-                </Link>
+                    >
+                      <Icon style={{ width: '24px', height: '24px', flexShrink: 0 }} />
+                      {sidebarExpanded && (
+                        <span className="font-mono" style={{ 
+                          fontSize: '0.875rem',
+                          whiteSpace: 'nowrap',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis'
+                        }}>
+                          {item.label}
+                        </span>
+                      )}
+                    </motion.div>
+                  </Link>
+                </div>
               );
             })}
           </div>

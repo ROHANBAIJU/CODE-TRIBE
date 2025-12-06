@@ -89,7 +89,7 @@ const SingularityNetPanel = ({ onStatusChange }: SNetPanelProps) => {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' }
       });
-      const data = await res.json();
+      await res.json();
       await fetchStatus();
       await fetchEarnings();
     } catch (err) {
