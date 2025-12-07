@@ -187,10 +187,6 @@ npm run dev
 **Backend:** Deploy to [Render.com](https://render.com) (Free tier available)  
 **Frontend:** Deploy to [Vercel](https://vercel.com) (Free tier available)
 
-📖 **Deployment Guides:**
-- **Backend (Render):** [DEPLOYMENT.md](DEPLOYMENT.md)
-- **Frontend (Vercel):** [DEPLOYMENT_FRONTEND.md](DEPLOYMENT_FRONTEND.md)
-
 ---
 
 ## 🌐 Live Demo & Access
