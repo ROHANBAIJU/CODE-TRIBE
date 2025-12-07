@@ -4,7 +4,6 @@ import {
   ChevronLeft,
   ChevronRight,
   Circle,
-  Flame,
   Globe,
   Layers,
   Map,
