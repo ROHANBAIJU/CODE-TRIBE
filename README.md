@@ -655,8 +655,6 @@ MIT License - See [LICENSE](LICENSE) for details.
 
 ---
 
-<div align="center">
-
 **Built with ❤️ for DEEP Open Innovation Hackathon #OIH2025**
 
 *Powered by SingularityNET & Deep Funding*
@@ -784,5 +782,3 @@ If you find this project helpful, please:
 **Made with ❤️ by Code Tribe for India's Industrial Safety Revolution**
 
 *Democratizing AI-powered safety monitoring, one factory at a time.* 🛡️
-
-</div>
