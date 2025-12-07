@@ -49,27 +49,6 @@ SafetyGuard AI is an **intelligent industrial safety monitoring system** that au
 **Self-Healing Intelligence:** Automatically generates synthetic training data and retrains on difficult cases—improving accuracy by +14% with zero downtime.
 
 **Key Achievements:**
-A **fully intelligent, self-healing safety platform** that democratizes industrial AI for India's manufacturing backbone.
-
-## 💡 What Does SafetyGuard AI Do?
-
-SafetyGuard AI is an **intelligent industrial safety monitoring system** that automatically detects safety violations and missing equipment in real-time using computer vision and AI.
-
-**Core Capabilities:**
-- 📹 **Real-Time Monitoring** - Analyzes factory camera feeds to detect safety equipment (helmets, fire extinguishers, oxygen tanks, first aid boxes)
-- 🗺️ **2D Safety Heatmaps** - Visualizes equipment distribution across factory floors to identify high-risk zones
-- 💬 **Natural Language Queries** - Ask "Is this zone safe for welding?" and get instant AI-powered safety analysis
-- 🔔 **Smart Alerts** - Flags missing equipment or violations with confidence scores
-- 📊 **Real-Time Dashboard** - Live visualization of detections, metrics, and compliance status
-
-**How It Helps Workers:**
-- **Safety Officers**: Monitor multiple zones simultaneously, generate automated compliance reports, receive instant violation alerts
-- **Factory Workers**: Ask safety questions in plain English, verify equipment requirements, locate emergency gear quickly
-- **Management**: Reduce insurance costs, maintain compliance (ISO 45001, OSHA), prevent accidents proactively
-
-**Self-Healing Intelligence:** Automatically generates synthetic training data and retrains on difficult cases—improving accuracy by +14% with zero downtime.
-
-**Key Achievements:**
 - ✅ **89.2% accuracy** with 42ms latency (2-5× faster than competitors)
 - ✅ **3-layer fusion architecture** (YOLO Nano + YOLO Small + RNN Temporal)
 - ✅ **Falcon-Link self-healing** (+14% accuracy improvement on edge cases, zero downtime)
@@ -282,70 +261,8 @@ npm run dev
 
 ### Option 2: Fully Hosted (Expect Delays)
 - **Frontend:** `https://code-tribe.vercel.app`
----
-
-## 🌐 Live Demo & Access
-
-### Option 1: Hosted Frontend + Local Backend (RECOMMENDED ⭐)
-- **Frontend:** `https://code-tribe.vercel.app` (Always fast)
-- **Backend:** Run locally (No cold start delays)
-- **Setup Time:** 2 minutes
-- **Experience:** Best performance
-
-### Option 2: Fully Hosted (Expect Delays)
-- **Frontend:** `https://code-tribe.vercel.app`
 - **Backend API:** `https://safety-guard-code-tribe.onrender.com`
 - **API Docs:** `https://safety-guard-code-tribe.onrender.com/docs`
-- ⚠️ **Warning:** 50+ second cold start on first request (Render free tier limitation)
-
-### Option 3: Full Localhost (Docker)
-```bash
-docker-compose up -d
-# Frontend: http://localhost
-# Backend: http://localhost:8000
-```
-
----
-
-## ⚠️ IMPORTANT DEPLOYMENT NOTICES
-
-### 🌐 Hosted Frontend Status
-- **Live URL:** `https://code-tribe.vercel.app` ✅
-- **Status:** Fully functional, deployed on Vercel
-- **Features:** All UI features work perfectly
-
-### 🐌 Backend Deployment Issue
-- **Render.com Backend:** Experiences **50+ second cold start delays** due to free tier limitations
-- **Impact:** First API request after inactivity takes 50-60 seconds to respond
-- **Subsequent requests:** Fast after initial warm-up
-
-### ✅ RECOMMENDED APPROACH (Localhost)
-
-**For best experience during evaluation:**
-
-1. **Clone repository and run backend locally:**
-   ```bash
-   cd backend
-   pip install -r ../requirements.txt
-   uvicorn main:app --reload --host 0.0.0.0 --port 8000
-   ```
-
-2. **Access hosted frontend** at `https://code-tribe.vercel.app`
-   - Frontend will connect to your localhost backend (update .env if needed)
-
-3. **Alternatively:** Run both frontend and backend locally using Docker:
-   ```bash
-   docker-compose up
-   ```
-
-### 🔑 VLM "The Brain" API Key Notice
-- **VLM Chat Feature** requires **Groq API key** (not included for security)
-- **To enable VLM:**
-  1. Get free API key from [Groq Console](https://console.groq.com)
-  2. Add to `.env` file: `GROQ_API_KEY=your_key_here`
-  3. Restart backend
-- **Without API key:** VLM features will show "API key not configured" error
-- **All other features work** without API key (detection, fusion, Falcon-Link, mapping)
 - ⚠️ **Warning:** 50+ second cold start on first request (Render free tier limitation)
 
 ### Option 3: Full Localhost (Docker)
@@ -409,8 +326,6 @@ SafetyGuard AI's comprehensive model matrices demonstrate our technical superior
 #### EMA Temporal Smoothing
 <img src="./DOCUMENTS-IMPORTANT/MODEL_MATRICES/6_EMA_Smoothing.png" width="75%" alt="EMA Smoothing">
 
-<img src="./DOCUMENTS-IMPORTANT/MODEL_MATRICES/6_EMA_Smoothing.png" width="75%" alt="EMA Smoothing">
-
 *Exponential Moving Average (α=0.3) for confidence stabilization across frames*
 
 </div>
@@ -421,13 +336,9 @@ SafetyGuard AI's comprehensive model matrices demonstrate our technical superior
 #### Confusion Matrix (89.2% Overall Accuracy)
 <img src="./DOCUMENTS-IMPORTANT/MODEL_MATRICES/8_Confusion_Matrix.png" width="75%" alt="Confusion Matrix">
 
-<img src="./DOCUMENTS-IMPORTANT/MODEL_MATRICES/8_Confusion_Matrix.png" width="75%" alt="Confusion Matrix">
-
 *8×8 class performance breakdown with per-class accuracy percentages*
 
 #### Confidence Distribution Analysis
-<img src="./DOCUMENTS-IMPORTANT/MODEL_MATRICES/9_Confidence_Distribution.png" width="75%" alt="Confidence Distribution">
-
 <img src="./DOCUMENTS-IMPORTANT/MODEL_MATRICES/9_Confidence_Distribution.png" width="75%" alt="Confidence Distribution">
 
 *True Positives (n=1000), False Positives (n=300), False Negatives (n=200) distribution*
@@ -435,13 +346,9 @@ SafetyGuard AI's comprehensive model matrices demonstrate our technical superior
 #### Precision-Recall Curves
 <img src="./DOCUMENTS-IMPORTANT/MODEL_MATRICES/10_Precision_Recall.png" width="75%" alt="Precision-Recall">
 
-<img src="./DOCUMENTS-IMPORTANT/MODEL_MATRICES/10_Precision_Recall.png" width="75%" alt="Precision-Recall">
-
 *mAP@0.5 = 0.872 (87.2%) across all safety equipment classes*
 
 #### ROC Curves with AUC Scores
-<img src="./DOCUMENTS-IMPORTANT/MODEL_MATRICES/11_ROC_Curves.png" width="75%" alt="ROC Curves">
-
 <img src="./DOCUMENTS-IMPORTANT/MODEL_MATRICES/11_ROC_Curves.png" width="75%" alt="ROC Curves">
 
 *Receiver Operating Characteristic curves showing model discrimination ability*
@@ -449,13 +356,9 @@ SafetyGuard AI's comprehensive model matrices demonstrate our technical superior
 #### Performance Metrics Dashboard
 <img src="./DOCUMENTS-IMPORTANT/MODEL_MATRICES/12_Performance_Metrics.png" width="75%" alt="Performance Metrics">
 
-<img src="./DOCUMENTS-IMPORTANT/MODEL_MATRICES/12_Performance_Metrics.png" width="75%" alt="Performance Metrics">
-
 *4-panel dashboard: Precision/Recall/F1, Class Support, Latency, Radar Chart*
 
 #### Training Progress Over 50 Epochs
-<img src="./DOCUMENTS-IMPORTANT/MODEL_MATRICES/13_Training_Curves.png" width="75%" alt="Training Curves">
-
 <img src="./DOCUMENTS-IMPORTANT/MODEL_MATRICES/13_Training_Curves.png" width="75%" alt="Training Curves">
 
 *Loss convergence, mAP@0.5 progression, and learning rate scheduling*
@@ -688,8 +591,7 @@ MIT License - See [LICENSE](LICENSE) for details.
 
 **Innovation Recognition:**
 - 🦅 **Self-Healing Safety AI** (Falcon-Link AstroOps)
-- 🦅 **Self-Healing Safety AI** (Falcon-Link AstroOps)
-- 🧠 **Natural Language Safety Queries** (VLM "The Brain")
+-  **Natural Language Safety Queries** (VLM "The Brain")
 - 🔗 **3-Layer Fusion Architecture** (YOLO Nano + Small + RNN)
 - 🌐 **Open Source & Decentralized** (93-96% cost reduction)
 
