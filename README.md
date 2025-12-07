@@ -28,7 +28,27 @@ India's industrial sector faces a workplace safety crisis:
 
 ### Our Solution
 
-A **fully intelligent, self-healing safety platform** that democratizes industrial AI for India's manufacturing backbone:
+A **fully intelligent, self-healing safety platform** that democratizes industrial AI for India's manufacturing backbone.
+
+## 💡 What Does SafetyGuard AI Do?
+
+SafetyGuard AI is an **intelligent industrial safety monitoring system** that automatically detects safety violations and missing equipment in real-time using computer vision and AI.
+
+**Core Capabilities:**
+- 📹 **Real-Time Monitoring** - Analyzes factory camera feeds to detect safety equipment (helmets, fire extinguishers, oxygen tanks, first aid boxes)
+- 🗺️ **2D Safety Heatmaps** - Visualizes equipment distribution across factory floors to identify high-risk zones
+- 💬 **Natural Language Queries** - Ask "Is this zone safe for welding?" and get instant AI-powered safety analysis
+- 🔔 **Smart Alerts** - Flags missing equipment or violations with confidence scores
+- 📊 **Real-Time Dashboard** - Live visualization of detections, metrics, and compliance status
+
+**How It Helps Workers:**
+- **Safety Officers**: Monitor multiple zones simultaneously, generate automated compliance reports, receive instant violation alerts
+- **Factory Workers**: Ask safety questions in plain English, verify equipment requirements, locate emergency gear quickly
+- **Management**: Reduce insurance costs, maintain compliance (ISO 45001, OSHA), prevent accidents proactively
+
+**Self-Healing Intelligence:** Automatically generates synthetic training data and retrains on difficult cases—improving accuracy by +14% with zero downtime.
+
+**Key Achievements:**
 - ✅ **89.2% accuracy** with 42ms latency (2-5× faster than competitors)
 - ✅ **3-layer fusion architecture** (YOLO Nano + YOLO Small + RNN Temporal)
 - ✅ **Falcon-Link self-healing** (+14% accuracy improvement on edge cases, zero downtime)
