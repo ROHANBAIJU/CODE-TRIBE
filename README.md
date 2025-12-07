@@ -68,6 +68,10 @@ SafetyGuard AI is an **intelligent industrial safety monitoring system** that au
 
 ---
 
+**Demo Video:**
+- 🎥 **YouTube:** [SafetyGuard AI Demo](https://youtu.be/IKKcJ8GxI-M)
+---
+
 ## 🏗️ System Architecture
 
 ### High-Level Platform Overview
