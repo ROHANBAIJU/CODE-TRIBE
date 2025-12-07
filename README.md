@@ -656,7 +656,7 @@ CODE-TRIBE/
 
 **Demo Video:**
 - 🎥 **YouTube:** [SafetyGuard AI Demo](https://youtu.be/IKKcJ8GxI-M)
-- 📁 **Local:** `./PPT/demo_video.mp4`
+  LIKE SHARE AND SUBSCRIBE ^_^
 
 **Submission Materials:**
 - Presentation slides (PPT/PDF)
