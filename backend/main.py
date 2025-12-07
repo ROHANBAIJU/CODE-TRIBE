@@ -218,9 +218,10 @@ async def run_inference(file: UploadFile = File(...)):
     img_np = np.array(image)
 
     # Layer 1: YOLO Detection (both models)
+    # Higher confidence threshold to reduce false positives
     layer1_start = time.time()
-    results_speed = model_speed(img_np, conf=0.25)
-    results_accuracy = model_accuracy(img_np, conf=0.25)
+    results_speed = model_speed(img_np, conf=0.45)
+    results_accuracy = model_accuracy(img_np, conf=0.45)
     
     # Convert to detection format
     detections_speed = yolo_results_to_detections(results_speed, model_speed.names)
@@ -250,8 +251,8 @@ async def run_inference(file: UploadFile = File(...)):
     for det in fused_detections:
         score = det['confidence']
         
-        # Falcon trigger logic
-        if 0.25 < score < 0.45:
+        # Falcon trigger logic - trigger if confidence is moderate (not too low, not too high)
+        if 0.45 < score < 0.70:
             falcon_trigger = True
         
         response_detections.append({
@@ -1332,19 +1333,23 @@ async def websocket_webcam(websocket: WebSocket):
                 continue
             
             # Run YOLO detection (speed model for real-time)
-            results = model_speed(pil_image, conf=0.3, verbose=False)
+            # Higher confidence threshold (0.55) to reduce false positives on webcam
+            results = model_speed(pil_image, conf=0.55, verbose=False)
             
-            # Process detections
+            # Process detections with additional confidence filtering
             detections = []
             for r in results[0].boxes:
                 bbox = r.xyxy[0].tolist()
                 conf = float(r.conf[0])
                 cls = int(r.cls[0])
-                detections.append({
-                    "bbox": bbox,
-                    "confidence": conf,
-                    "class": results[0].names[cls]
-                })
+                
+                # Only include high-confidence detections (>55%)
+                if conf >= 0.55:
+                    detections.append({
+                        "bbox": bbox,
+                        "confidence": conf,
+                        "class": results[0].names[cls]
+                    })
             
             # Calculate FPS
             frame_count += 1
