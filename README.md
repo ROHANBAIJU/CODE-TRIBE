@@ -772,8 +772,12 @@ If you find this project helpful, please:
 
 ### 📜 Changelog
 
-#### Version 3.0.0 (December 2025) - DEEP Hackathon Submission
+#### Version 2.0.0 (December 2025) - DEEP Hackathon Submission
 - ✨ Added 3-layer fusion architecture (YOLO Nano + Small + RNN)
+- ✨ YOLO dual ensemble (Nano + Small)
+- ✨ Basic RNN temporal tracking
+- ✨ FastAPI backend with 8 safety classes
+- ✨ React dashboard with Chart.js
 - ✨ Implemented Falcon-Link self-healing pipeline (+14% accuracy)
 - ✨ Integrated VLM "The Brain" for natural language queries
 - ✨ SingularityNET marketplace integration (AGI token economy)
@@ -784,12 +788,6 @@ If you find this project helpful, please:
 - 📊 Achieved 89.2% accuracy with 42ms latency
 - 📝 Comprehensive documentation (QUESTIONS.md, COMPETITOR_ANALYSIS.md)
 - 🎨 Material Design UI with dark/light themes
-
-#### Version 2.0.0 (November 2025) - Beta Release
-- ✨ YOLO dual ensemble (Nano + Small)
-- ✨ Basic RNN temporal tracking
-- ✨ FastAPI backend with 8 safety classes
-- ✨ React dashboard with Chart.js
 
 #### Version 1.0.0 (October 2025) - Alpha Release
 - ✨ Initial prototype with single YOLO model
