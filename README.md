@@ -643,7 +643,6 @@ CODE-TRIBE/
 
 **PowerPoint Presentation:**
 - 📁 **Location:** `./PPT/SafetyGuard_AI_Presentation.pptx`
-- 🔗 **Google Slides:** [View Presentation](https://docs.google.com/presentation/d/YOUR_PRESENTATION_ID/edit?usp=sharing)
 - 📄 **PDF Version:** [Download PDF](./PPT/SafetyGuard_AI_Presentation.pdf)
 
 **Includes:**
