@@ -1,6 +1,6 @@
 # 🛡️ SafetyGuard AI
 
-**Version 3.0.0 - AI-Powered Industrial Safety Revolution**
+**Version 2.0.0 - AI-Powered Industrial Safety Revolution**
 
 > A comprehensive, intelligent workplace safety monitoring platform leveraging multi-layer AI fusion, self-healing pipelines, and natural language understanding to protect workers and save lives.
 
