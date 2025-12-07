@@ -655,7 +655,7 @@ CODE-TRIBE/
 - Future roadmap
 
 **Demo Video:**
-- 🎥 **YouTube:** [SafetyGuard AI Demo](https://youtube.com/watch?v=YOUR_VIDEO_ID)
+- 🎥 **YouTube:** [SafetyGuard AI Demo](https://youtu.be/IKKcJ8GxI-M)
 - 📁 **Local:** `./PPT/demo_video.mp4`
 
 **Submission Materials:**
